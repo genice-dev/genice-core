@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "genice-core"
-version = "0.8" # major.minor.fix
+version = "0.8.1" # major.minor.fix
 authors = [
   { name="Masakazu Matsumoto", email="vitroid@gmail.com" },
 ]
@@ -20,9 +20,9 @@ classifiers = [
 dependencies = ["numpy", "networkx"]
 
 [project.urls]
-"Homepage" = "https://github.com/vitroid/GenIce-core"
-"Bug Tracker" = "https://github.com/vitroid/GenIce-core/issues"
-"manual" = "https://vitroid.github.io/GenIce-core"
+"Homepage" = "https://github.com/genice-dev/genice-core"
+"Bug Tracker" = "https://github.com/genice-dev/genice-core/issues"
+"manual" = "https://genice-dev.github.io/genice-core"
 
 [project.genice]
 "logo" = "https://raw.githubusercontent.com/vitroid/GenIce/develop/logo/genice-v0.png"
