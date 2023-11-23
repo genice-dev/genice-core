@@ -110,7 +110,7 @@ def optimize(
             logger.debug(f"Depol. loop {loop}: {optimalPol}")
 
             # if well-converged,
-            if optimalPol @ optimalPol < 1e-10:
+            if optimalPol @ optimalPol < 1e-4:
                 logger.debug("Optimized.")
                 break
 
