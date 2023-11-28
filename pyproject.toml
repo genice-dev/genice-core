@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "genice-core"
-version = "0.8.1" # major.minor.fix
+version = "0.8.2" # major.minor.fix
 authors = [
   { name="Masakazu Matsumoto", email="vitroid@gmail.com" },
 ]

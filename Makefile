@@ -9,9 +9,7 @@ build: $(SOURCES) README.md doc
 # https://qiita.com/yukinarit/items/0996180032c077443efb
 # https://zenn.dev/atu4403/articles/python-githubpages
 doc: README.md CITATION.cff 
-	pdoc3 --html -o docs-tmp --force genice_core
-	-rm -rf docs
-	mv docs-tmp/genice_core docs
+	pdoc -o docs ./genice_core --docformat google
 
 
 

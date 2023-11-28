@@ -1,10 +1,6 @@
 """
 .. include:: ../README.md
 """
-
-"""
-Optimizes the orientations of directed paths to reduce the net dipole moment.
-"""
 import numpy as np
 import networkx as nx
 from genice_core.topology import noodlize, split_into_simple_paths, balance
@@ -22,8 +18,6 @@ def ice_graph(
 ) -> nx.DiGraph:
     """Make a digraph that obeys the ice rules.
 
-    A new algorithm based on the suggestion by Prof. Sakuma, Yamagata University.
-
     Args:
         g (nx.Graph): A ice-like undirected graph.
         vertexPositions (Union[nx.ndarray, None], optional): Positions of the vertices. Defaults to None.
@@ -32,7 +26,7 @@ def ice_graph(
         fixed (nx.DiGraph, optional): A digraph made of edges whose directions are fixed. All edges in fixed must also be included in g. Defaults to an empty graph.
 
     Returns:
-        nx.DiGraph: An ice graph. (CHANGED. BE CAREFUL この変更の影響をもっとも受けるのがGenIce)
+        nx.DiGraph: An ice graph.
     """
     logger = getLogger()
 
