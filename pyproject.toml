@@ -3,27 +3,36 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 
-[project]
+[tool.poetry]
 name = "genice-core"
-version = "0.8.2" # major.minor.fix
+version = "0.9" # major.minor.fix
 authors = [
-  { name="Masakazu Matsumoto", email="vitroid@gmail.com" },
+  "Masakazu Matsumoto <vitroid@gmail.com>", 
 ]
 description = "Core algorithms of GenIce2"
-readme = "README.md"
-requires-python = ">=3.9"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-]
-dependencies = ["numpy", "networkx"]
+[tool.poetry.dependencies]
+python = ">=3.9"
+# readme = "README.md"
+# requires-python = ">=3.9"
+# classifiers = [
+#     "Programming Language :: Python :: 3",
+#     "License :: OSI Approved :: MIT License",
+#     "Operating System :: OS Independent",
+# ]
+# dependencies = ["numpy", "networkx"]
+networkx = "^3.2.1"
+numpy = "^1.26.2"
+
+[tool.poetry.group.dev.dependencies]
+pdoc = "^14.1.0"
+toml = "^0.10.2"
 
 [project.urls]
 "Homepage" = "https://github.com/genice-dev/genice-core"
 "Bug Tracker" = "https://github.com/genice-dev/genice-core/issues"
 "manual" = "https://genice-dev.github.io/genice-core"
 
-[project.genice]
+[genice]
 "logo" = "https://raw.githubusercontent.com/vitroid/GenIce/develop/logo/genice-v0.png"
 "url" = "https://github.com/vitroid/GenIce"
+"repo" = "https://pypi.python.org/pypi/GenIce"

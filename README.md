@@ -4,13 +4,14 @@
 
 Core algorithms of GenIce2
 
-version 0.8.2
+version 0.9
 
 
 ## Requirements
 
-* numpy
+* python
 * networkx
+* numpy
 
 
 
