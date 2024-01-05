@@ -11,7 +11,7 @@ authors = [
 ]
 description = "Core algorithms of GenIce2"
 [tool.poetry.dependencies]
-python = ">=3.9"
+python = ">=3.9,<4.0"
 # readme = "README.md"
 # requires-python = ">=3.9"
 # classifiers = [
@@ -27,12 +27,18 @@ numpy = "^1.26.2"
 pdoc = "^14.1.0"
 toml = "^0.10.2"
 
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.4"
+genice2 = {git = "https://github.com/vitroid/GenIce.git", rev = "genice-core"}
+clustice = {git = "https://github.com/ClustIce/ClustIce.git"}
+
 [project.urls]
 "Homepage" = "https://github.com/genice-dev/genice-core"
 "Bug Tracker" = "https://github.com/genice-dev/genice-core/issues"
 "manual" = "https://genice-dev.github.io/genice-core"
 
-[genice]
+[tool.genice]
 "logo" = "https://raw.githubusercontent.com/vitroid/GenIce/develop/logo/genice-v0.png"
 "url" = "https://github.com/vitroid/GenIce"
 "repo" = "https://pypi.python.org/pypi/GenIce"

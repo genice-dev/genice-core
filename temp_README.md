@@ -1,4 +1,4 @@
-![Logo]({{genice.logo}})
+![Logo]({{tool.genice.logo}})
 
 # GenIce-core
 
@@ -15,7 +15,7 @@ version {{tool.poetry.version}}
 
 ## Installation
 
-GenIce-core is registered to [PyPI (Python Package Index)]({{genice.repo}}).
+GenIce-core is registered to [PyPI (Python Package Index)]({{tool.genice.repo}}).
 Install with pip3.
 
     pip3 install genice-core
@@ -78,4 +78,4 @@ M. Matsumoto, T. Yagasaki, and H. Tanaka, “Novel Algorithm to Generate Hydroge
 
 ## How to contribute
 
-GenIce has been available as open source software on GitHub({{genice.url}}) since 2015. Feedback, suggestions for improvements and enhancements, bug fixes, etc. are sincerely welcome. Developers and test users are also welcome. If you have any ice that is publicly available but not included in GenIce, please let us know.
+GenIce has been available as open source software on GitHub({{tool.genice.url}}) since 2015. Feedback, suggestions for improvements and enhancements, bug fixes, etc. are sincerely welcome. Developers and test users are also welcome. If you have any ice that is publicly available but not included in GenIce, please let us know.
