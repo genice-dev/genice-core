@@ -12,6 +12,7 @@ version 0.9
 * python
 * networkx
 * numpy
+* pdoc3
 
 
 
