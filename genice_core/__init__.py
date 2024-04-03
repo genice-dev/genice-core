@@ -1,6 +1,7 @@
 """
 .. include:: ../README.md
 """
+
 import numpy as np
 import networkx as nx
 from genice_core.topology import noodlize, split_into_simple_paths, balance
