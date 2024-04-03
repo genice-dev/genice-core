@@ -2,10 +2,13 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+# poetry self add poetry-version-plugin
+[tool.poetry-version-plugin]
+source = "init"
 
 [tool.poetry]
 name = "genice-core"
-version = "0.9" # major.minor.fix
+version = "0.0.0"
 authors = [
   "Masakazu Matsumoto <vitroid@gmail.com>", 
 ]
@@ -39,7 +42,6 @@ clustice = {git = "https://github.com/ClustIce/ClustIce.git"}
 "Bug Tracker" = "https://github.com/genice-dev/genice-core/issues"
 "manual" = "https://genice-dev.github.io/genice-core"
 
-[tool.genice]
+[tool.genice.urls]
 "logo" = "https://raw.githubusercontent.com/vitroid/GenIce/develop/logo/genice-v0.png"
-"url" = "https://github.com/vitroid/GenIce"
-"repo" = "https://pypi.python.org/pypi/GenIce"
+"repository" = "https://pypi.python.org/pypi/GenIce"

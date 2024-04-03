@@ -11,7 +11,7 @@ doc: README.md CITATION.cff
 %: temp_% replacer.py pyproject.toml
 	python replacer.py < $< > $@
 
-test-deploy:
+test-deploy: clean
 	poetry publish --build -r testpypi
 test-install:
 	pip install --index-url https://test.pypi.org/simple/ $(PKGNAME)
@@ -19,7 +19,7 @@ uninstall:
 	-pip uninstall -y $(PKGNAME)
 build: README.md $(wildcard cycles/*.py)
 	poetry build
-deploy:
+deploy: clean
 	poetry publish --build
 check:
 	poetry check

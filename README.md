@@ -4,7 +4,7 @@
 
 Core algorithms of GenIce2
 
-version 0.9
+version 0.9.1
 
 
 ## Requirements
@@ -81,4 +81,4 @@ M. Matsumoto, T. Yagasaki, and H. Tanaka, “GenIce-core: Efficient algorithm fo
 
 ## How to contribute
 
-GenIce has been available as open source software on GitHub(https://github.com/vitroid/GenIce) since 2015. Feedback, suggestions for improvements and enhancements, bug fixes, etc. are sincerely welcome. Developers and test users are also welcome. If you have any ice that is publicly available but not included in GenIce, please let us know.
+GenIce has been available as open source software on GitHub(https://pypi.python.org/pypi/GenIce) since 2015. Feedback, suggestions for improvements and enhancements, bug fixes, etc. are sincerely welcome. Developers and test users are also welcome. If you have any ice that is publicly available but not included in GenIce, please let us know.

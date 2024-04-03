@@ -9,6 +9,8 @@ from genice_core.dipole import optimize, vector_sum, _dipole_moment_pbc
 from typing import Union
 from logging import getLogger, DEBUG
 
+__version__ = "0.9.1"
+
 
 def ice_graph(
     g: nx.Graph,
