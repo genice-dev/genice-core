@@ -42,7 +42,6 @@ clustice = {git = "https://github.com/ClustIce/ClustIce.git"}
 "Bug Tracker" = "https://github.com/genice-dev/genice-core/issues"
 "manual" = "https://genice-dev.github.io/genice-core"
 
-[tool.genice]
+[tool.genice.urls]
 "logo" = "https://raw.githubusercontent.com/vitroid/GenIce/develop/logo/genice-v0.png"
-"url" = "https://github.com/vitroid/GenIce"
-"repo" = "https://pypi.python.org/pypi/GenIce"
+"repository" = "https://pypi.python.org/pypi/GenIce"

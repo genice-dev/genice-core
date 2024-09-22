@@ -4,8 +4,7 @@
 
 Core algorithms of GenIce2
 
-version 0.9
-
+version 1.0
 
 ## Requirements
 
@@ -13,7 +12,6 @@ version 0.9
 * networkx
 * numpy
 * pdoc3
-
 
 
 ## Installation
@@ -51,20 +49,19 @@ dg = genice_core.ice_graph(g)
 nx.draw_networkx(dg, pos)
 ```
 
-
 ## Algorithms and how to cite them.
 
 The algorithms to make a depolarized hydrogen-disordered ice are explained in these papers:
 
 M. Matsumoto, T. Yagasaki, and H. Tanaka,"GenIce: Hydrogen-Disordered
-Ice Generator",  J. Comput. Chem. 39, 61-64 (2017). [DOI: 10.1002/jcc.25077](http://doi.org/10.1002/jcc.25077)
+Ice Generator", J. Comput. Chem. 39, 61-64 (2017). [DOI: 10.1002/jcc.25077](http://doi.org/10.1002/jcc.25077)
 
     @article{Matsumoto:2017bk,
         author = {Matsumoto, Masakazu and Yagasaki, Takuma and Tanaka, Hideki},
         title = {GenIce: Hydrogen-Disordered Ice Generator},
         journal = {Journal of Computational Chemistry},
-		volume = {39},
-		pages = {61-64},
+    	volume = {39},
+    	pages = {61-64},
         year = {2017}
     }
 
@@ -81,4 +78,4 @@ M. Matsumoto, T. Yagasaki, and H. Tanaka, “GenIce-core: Efficient algorithm fo
 
 ## How to contribute
 
-GenIce has been available as open source software on GitHub(https://github.com/vitroid/GenIce) since 2015. Feedback, suggestions for improvements and enhancements, bug fixes, etc. are sincerely welcome. Developers and test users are also welcome. If you have any ice that is publicly available but not included in GenIce, please let us know.
+GenIce has been available as open source software on GitHub(https://pypi.python.org/pypi/GenIce) since 2015. Feedback, suggestions for improvements and enhancements, bug fixes, etc. are sincerely welcome. Developers and test users are also welcome. If you have any ice that is publicly available but not included in GenIce, please let us know.
