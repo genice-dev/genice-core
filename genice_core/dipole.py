@@ -1,6 +1,7 @@
 """
 Optimizes the orientations of directed paths to reduce the net dipole moment.
 """
+
 from logging import getLogger, DEBUG
 from typing import Union
 
@@ -61,8 +62,8 @@ def optimize(
     """
     logger = getLogger()
 
-    if dipoleOptimizationCycles < 1:
-        return paths
+    # if dipoleOptimizationCycles < 1:
+    #     return paths
 
     if targetPol is None:
         targetPol = np.zeros_like(vertexPositions[0])
@@ -87,7 +88,7 @@ def optimize(
                 polarizedEdges.append(i)
     dipoles = np.array(dipoles)
 
-    optimalParities = np.ones(len(dipoles))
+    optimalParities = np.random.randint(2, size=len(dipoles)) * 2 - 1
     optimalPol = optimalParities @ dipoles - targetPol
     logger.debug(f"initial {optimalParities @ dipoles} target {targetPol}")
 
@@ -95,6 +96,7 @@ def optimize(
         logger.debug(f"dipoles {dipoles}")
         order = np.argsort(np.linalg.norm(dipoles, axis=1))
 
+    loop = 0
     for loop in range(dipoleOptimizationCycles):
         # random sequence of +1/-1
         parities = np.random.randint(2, size=len(dipoles)) * 2 - 1
