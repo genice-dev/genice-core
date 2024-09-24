@@ -90,11 +90,12 @@ def optimize(
 
     optimalParities = np.random.randint(2, size=len(dipoles)) * 2 - 1
     optimalPol = optimalParities @ dipoles - targetPol
-    logger.debug(f"initial {optimalParities @ dipoles} target {targetPol}")
 
-    if len(dipoles) > 0 and logger.isEnabledFor(DEBUG):
+    if logger.isEnabledFor(DEBUG):
+        logger.debug(f"initial {optimalParities @ dipoles} target {targetPol}")
         logger.debug(f"dipoles {dipoles}")
-        order = np.argsort(np.linalg.norm(dipoles, axis=1))
+        for i, parity in zip(polarizedEdges, optimalParities):
+            logger.debug(f"{parity}: {paths[i]}")
 
     loop = 0
     for loop in range(dipoleOptimizationCycles):
