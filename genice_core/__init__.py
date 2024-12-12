@@ -20,8 +20,8 @@ def ice_graph(
     """Make a digraph that obeys the ice rules.
 
     Args:
-        g (nx.Graph): An ice-like undirected graph.
-        vertexPositions (Union[nx.ndarray, None], optional): Positions of the vertices. Defaults to None.
+        g (nx.Graph): An ice-like undirected graph. Node labels in the graph g must be consecutive integers from 0 to N-1, where N is the number of nodes, and the labels correspond to the order in vertexPositions.
+        vertexPositions (Union[nx.ndarray, None], optional): Positions of the vertices in N x 3 numpy array. Defaults to None.
         isPeriodicBoundary (bool, optional): If True, the positions are considered to be in the fractional coordinate system. Defaults to False.
         dipoleOptimizationCycles (int, optional): Number of iterations to reduce the net dipole moment. Defaults to 0 (no iteration).
         fixed (nx.DiGraph, optional): A digraph made of edges whose directions are fixed. All edges in fixed must also be included in g. Defaults to an empty graph.

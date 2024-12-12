@@ -163,8 +163,8 @@ Install with pip3.</p>
 </span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Make a digraph that obeys the ice rules.</span>
 </span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a>
 </span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a><span class="sd">    Args:</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a><span class="sd">        g (nx.Graph): An ice-like undirected graph.</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a><span class="sd">        vertexPositions (Union[nx.ndarray, None], optional): Positions of the vertices. Defaults to None.</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a><span class="sd">        g (nx.Graph): An ice-like undirected graph. Node labels in the graph g must be consecutive integers from 0 to N-1, where N is the number of nodes, and the labels correspond to the order in vertexPositions.</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a><span class="sd">        vertexPositions (Union[nx.ndarray, None], optional): Positions of the vertices in N x 3 numpy array. Defaults to None.</span>
 </span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a><span class="sd">        isPeriodicBoundary (bool, optional): If True, the positions are considered to be in the fractional coordinate system. Defaults to False.</span>
 </span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a><span class="sd">        dipoleOptimizationCycles (int, optional): Number of iterations to reduce the net dipole moment. Defaults to 0 (no iteration).</span>
 </span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a><span class="sd">        fixed (nx.DiGraph, optional): A digraph made of edges whose directions are fixed. All edges in fixed must also be included in g. Defaults to an empty graph.</span>
@@ -289,8 +289,8 @@ Install with pip3.</p>
 </span><span id="ice_graph-21"><a href="#ice_graph-21"><span class="linenos"> 21</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Make a digraph that obeys the ice rules.</span>
 </span><span id="ice_graph-22"><a href="#ice_graph-22"><span class="linenos"> 22</span></a>
 </span><span id="ice_graph-23"><a href="#ice_graph-23"><span class="linenos"> 23</span></a><span class="sd">    Args:</span>
-</span><span id="ice_graph-24"><a href="#ice_graph-24"><span class="linenos"> 24</span></a><span class="sd">        g (nx.Graph): An ice-like undirected graph.</span>
-</span><span id="ice_graph-25"><a href="#ice_graph-25"><span class="linenos"> 25</span></a><span class="sd">        vertexPositions (Union[nx.ndarray, None], optional): Positions of the vertices. Defaults to None.</span>
+</span><span id="ice_graph-24"><a href="#ice_graph-24"><span class="linenos"> 24</span></a><span class="sd">        g (nx.Graph): An ice-like undirected graph. Node labels in the graph g must be consecutive integers from 0 to N-1, where N is the number of nodes, and the labels correspond to the order in vertexPositions.</span>
+</span><span id="ice_graph-25"><a href="#ice_graph-25"><span class="linenos"> 25</span></a><span class="sd">        vertexPositions (Union[nx.ndarray, None], optional): Positions of the vertices in N x 3 numpy array. Defaults to None.</span>
 </span><span id="ice_graph-26"><a href="#ice_graph-26"><span class="linenos"> 26</span></a><span class="sd">        isPeriodicBoundary (bool, optional): If True, the positions are considered to be in the fractional coordinate system. Defaults to False.</span>
 </span><span id="ice_graph-27"><a href="#ice_graph-27"><span class="linenos"> 27</span></a><span class="sd">        dipoleOptimizationCycles (int, optional): Number of iterations to reduce the net dipole moment. Defaults to 0 (no iteration).</span>
 </span><span id="ice_graph-28"><a href="#ice_graph-28"><span class="linenos"> 28</span></a><span class="sd">        fixed (nx.DiGraph, optional): A digraph made of edges whose directions are fixed. All edges in fixed must also be included in g. Defaults to an empty graph.</span>
@@ -398,8 +398,8 @@ Install with pip3.</p>
 <h6 id="arguments">Arguments:</h6>
 
 <ul>
-<li><strong>g (nx.Graph):</strong>  An ice-like undirected graph.</li>
-<li><strong>vertexPositions (Union[nx.ndarray, None], optional):</strong>  Positions of the vertices. Defaults to None.</li>
+<li><strong>g (nx.Graph):</strong>  An ice-like undirected graph. Node labels in the graph g must be consecutive integers from 0 to N-1, where N is the number of nodes, and the labels correspond to the order in vertexPositions.</li>
+<li><strong>vertexPositions (Union[nx.ndarray, None], optional):</strong>  Positions of the vertices in N x 3 numpy array. Defaults to None.</li>
 <li><strong>isPeriodicBoundary (bool, optional):</strong>  If True, the positions are considered to be in the fractional coordinate system. Defaults to False.</li>
 <li><strong>dipoleOptimizationCycles (int, optional):</strong>  Number of iterations to reduce the net dipole moment. Defaults to 0 (no iteration).</li>
 <li><strong>fixed (nx.DiGraph, optional):</strong>  A digraph made of edges whose directions are fixed. All edges in fixed must also be included in g. Defaults to an empty graph.</li>
