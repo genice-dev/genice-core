@@ -3,7 +3,7 @@ Optimizes the orientations of directed paths to reduce the net dipole moment.
 """
 
 from logging import getLogger, DEBUG
-from typing import Union
+from typing import Union, List, Optional
 
 import numpy as np
 import networkx as nx
@@ -12,7 +12,7 @@ import networkx as nx
 def vector_sum(
     dg: nx.DiGraph, vertexPositions: np.ndarray, isPeriodicBoundary: bool = False
 ) -> np.ndarray:
-    """Net polarization (actually a vector sum) of a digraph
+    """Calculate the net polarization (vector sum) of a digraph.
 
     Args:
         dg (nx.DiGraph): The digraph.
@@ -20,7 +20,7 @@ def vector_sum(
         isPeriodicBoundary (bool, optional): If true, the vertex positions must be in fractional coordinate. Defaults to False.
 
     Returns:
-        np.ndarray: net polarization
+        np.ndarray: Net polarization vector.
     """
     pol = np.zeros_like(vertexPositions[0])
     for i, j in dg.edges():
@@ -31,7 +31,16 @@ def vector_sum(
     return pol
 
 
-def _dipole_moment_pbc(path, vertexPositions):
+def _dipole_moment_pbc(path: List[int], vertexPositions: np.ndarray) -> np.ndarray:
+    """Calculate the dipole moment of a path with periodic boundary conditions.
+
+    Args:
+        path (List[int]): The path to calculate dipole moment for.
+        vertexPositions (np.ndarray): Positions of the vertices.
+
+    Returns:
+        np.ndarray: The dipole moment vector.
+    """
     # vectors between adjacent vertices.
     relativeVector = vertexPositions[path[1:]] - vertexPositions[path[:-1]]
     # PBC wrap
@@ -41,37 +50,35 @@ def _dipole_moment_pbc(path, vertexPositions):
 
 
 def optimize(
-    paths: list[list],
+    paths: List[List[int]],
     vertexPositions: np.ndarray,
     dipoleOptimizationCycles: int = 2000,
     isPeriodicBoundary: bool = False,
-    targetPol: Union[np.ndarray, None] = None,
-) -> list[list]:
+    targetPol: Optional[np.ndarray] = None,
+) -> List[List[int]]:
     """Minimize the net polarization by flipping several paths.
 
     It is assumed that every vector has an identical dipole moment.
 
     Args:
-        paths (list of list): List of directed paths. A path is a list of integer. A path with identical labels at first and last items are considered to be cyclic.
-        pos (nx.ndarray[*,3]): Positions of the nodes.
-        maxiter (int, optional): Number of random orientations for the paths. Defaults to 1000.
-        pbc (bool, optional): If `True`, the positions of the nodes must be in the fractional coordinate system.
-        target (np.ndarray, optional): Target value for the dipole-moment optimization.
+        paths (List[List[int]]): List of directed paths. A path is a list of integers. A path with identical labels at first and last items are considered to be cyclic.
+        vertexPositions (np.ndarray): Positions of the nodes.
+        dipoleOptimizationCycles (int, optional): Number of random orientations for the paths. Defaults to 2000.
+        isPeriodicBoundary (bool, optional): If `True`, the positions of the nodes must be in the fractional coordinate system. Defaults to False.
+        targetPol (Optional[np.ndarray], optional): Target value for the dipole-moment optimization. Defaults to None.
+
     Returns:
-        list of paths: Optimized paths.
+        List[List[int]]: Optimized paths with minimized net polarization.
     """
     logger = getLogger()
-
-    # if dipoleOptimizationCycles < 1:
-    #     return paths
 
     if targetPol is None:
         targetPol = np.zeros_like(vertexPositions[0])
 
     # polarized chains and cycles. Small cycle of dipoles are eliminated.
-    polarizedEdges = []
+    polarizedEdges: List[int] = []
 
-    dipoles = []
+    dipoles: List[np.ndarray] = []
     for i, path in enumerate(paths):
         if isPeriodicBoundary:
             chainPol = _dipole_moment_pbc(path, vertexPositions)

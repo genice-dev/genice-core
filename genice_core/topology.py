@@ -5,43 +5,43 @@ Arrange edges appropriately.
 from logging import getLogger, DEBUG
 import networkx as nx
 import numpy as np
-from typing import Union
+from typing import Union, List, Tuple, Optional
 
 
-def _trace_path(g: nx.Graph, path: list) -> list:
-    """trace the path
+def _trace_path(g: nx.Graph, path: List[int]) -> List[int]:
+    """Trace the path in a linear or cyclic graph.
 
     Args:
-        g (nx.Graph): a linear or a simple cyclic graph.
-        path (list): A given path tho be extended
+        g (nx.Graph): A linear or a simple cyclic graph.
+        path (List[int]): A given path to be extended.
 
     Returns:
-        list: the extended path or cycle
+        List[int]: The extended path or cycle.
     """
     while True:
         # look at the head of the path
         last, head = path[-2:]
-        for next in g[head]:
-            if next != last:
+        for next_node in g[head]:
+            if next_node != last:
                 # go ahead
                 break
         else:
             # no next node
             return path
-        path.append(next)
-        if next == path[0]:
+        path.append(next_node)
+        if next_node == path[0]:
             # is cyclic
             return path
 
 
-def _find_path(g: nx.Graph) -> list:
-    """Find the path in g
+def _find_path(g: nx.Graph) -> List[int]:
+    """Find a path in a linear or cyclic graph.
 
     Args:
-        g (nx.Graph): a linear or a simple cyclic graph.
+        g (nx.Graph): A linear or a simple cyclic graph.
 
     Returns:
-        list: the path or cycle
+        List[int]: The path or cycle.
     """
     nodes = list(g.nodes())
     # choose one node
@@ -66,12 +66,19 @@ def _find_path(g: nx.Graph) -> list:
     return c0[::-1] + c1[1:]
 
 
-def _divide(g: nx.Graph, vertex: int, offset: int):
+def _divide(g: nx.Graph, vertex: int, offset: int) -> None:
+    """Divide a vertex into two vertices and redistribute edges.
+
+    Args:
+        g (nx.Graph): The graph to modify.
+        vertex (int): The vertex to divide.
+        offset (int): The offset for the new vertex label.
+    """
     # fill by Nones if number of neighbors is less than 4
     nei = (list(g[vertex]) + [None, None, None, None])[:4]
 
     # two neighbor nodes that are passed away to the new node
-    migrants = set(np.random.choice(nei, 2, replace=False)) - set([None])
+    migrants = set(np.random.choice(nei, 2, replace=False)) - {None}
 
     # new node label
     newVertex = vertex + offset
@@ -89,12 +96,11 @@ def noodlize(g: nx.Graph, fixed: nx.DiGraph = nx.DiGraph()) -> nx.Graph:
 
     Args:
         g (nx.Graph): An ice-like undirected graph. All vertices must not be >4-degree.
-        fixed (Union[nx.DiGraph,None], optional): Specifies the edges whose direction is fixed.. Defaults to None.
+        fixed (nx.DiGraph, optional): Specifies the edges whose direction is fixed. Defaults to an empty graph.
 
     Returns:
-        nx.Graph: A graph mode of chains and cycles.
+        nx.Graph: A graph made of chains and cycles.
     """
-
     logger = getLogger()
 
     g_fix = nx.Graph(fixed)  # undirected copy
@@ -114,19 +120,17 @@ def noodlize(g: nx.Graph, fixed: nx.DiGraph = nx.DiGraph()) -> nx.Graph:
         if nfixed == 0:
             _divide(g_noodles, v, offset)
 
-    # divg is made of chains and cycles.
-    # divg does not contain the edges in fixed.
     return g_noodles
 
 
-def _decompose_complex_path(path: list):
-    """A generator that divides a complex path with self-crossings to set of simple cycles and paths.
+def _decompose_complex_path(path: List[int]) -> List[List[int]]:
+    """Divide a complex path with self-crossings into simple cycles and paths.
 
     Args:
-        path (list): A complex path
+        path (List[int]): A complex path.
 
     Yields:
-        list: a short and simple path/cycle
+        List[int]: A short and simple path/cycle.
     """
     logger = getLogger()
     if len(path) == 0:
@@ -163,23 +167,19 @@ def _decompose_complex_path(path: list):
 def split_into_simple_paths(
     nnode: int,
     g_noodles: nx.Graph,
-):
+) -> List[List[int]]:
     """Set the orientations to the components.
 
     Args:
-        nnode (int): number of nodes in the original graph.
-        divg (nx.Graph): the divided graph.
+        nnode (int): Number of nodes in the original graph.
+        g_noodles (nx.Graph): The divided graph.
 
     Yields:
-        list: a short and simple path/cycle
+        List[int]: A short and simple path/cycle.
     """
-
     for verticeSet in nx.connected_components(g_noodles):
         # a component of c is either a chain or a cycle.
         g_noodle = g_noodles.subgraph(verticeSet)
-        # nn = len(g_noodle)
-        # ne = len([e for e in g_noodle.edges()])
-        # assert nn == ne or nn == ne + 1
 
         # Find a simple path in the doubled graph
         # It must be a simple path or a simple cycle.
@@ -192,34 +192,39 @@ def split_into_simple_paths(
         yield from _decompose_complex_path(flatten)
 
 
-def _remove_dummy_nodes(g: Union[nx.Graph, nx.DiGraph]):
+def _remove_dummy_nodes(g: Union[nx.Graph, nx.DiGraph]) -> None:
+    """Remove dummy nodes from the graph.
+
+    Args:
+        g (Union[nx.Graph, nx.DiGraph]): The graph to clean.
+    """
     for i in range(-1, -5, -1):
         if g.has_node(i):
             g.remove_node(i)
 
 
-def balance(fixed: nx.DiGraph, g: nx.Graph):
+def balance(fixed: nx.DiGraph, g: nx.Graph) -> Tuple[Optional[nx.DiGraph], List[List[int]]]:
     """Extend the prefixed digraph to make the remaining graph balanced.
 
     Args:
-        fixed (nx.DiGraph): fixed edges
-        g (nx.Graph): skeletal graph
+        fixed (nx.DiGraph): Fixed edges.
+        g (nx.Graph): Skeletal graph.
 
     Returns:
-        nx.DiGraph: extended fixed graph (derived cycles are included)
-        list: a list of derived cycles.
+        Tuple[Optional[nx.DiGraph], List[List[int]]]: A tuple containing:
+            - The extended fixed graph (derived cycles are included)
+            - A list of derived cycles.
     """
-
-    def _choose_free_edge(g: nx.Graph, dg: nx.DiGraph, node: int):
+    def _choose_free_edge(g: nx.Graph, dg: nx.DiGraph, node: int) -> Optional[int]:
         """Find an unfixed edge of the node.
 
         Args:
-            g (nx.Graph): _description_
-            dg (nx.DiGraph): _description_
-            node (int): _description_
+            g (nx.Graph): The original graph.
+            dg (nx.DiGraph): The directed graph.
+            node (int): The node to find edges for.
 
         Returns:
-            _type_: _description_
+            Optional[int]: A free edge if found, None otherwise.
         """
         # add dummy nodes to make number of edges be four.
         neis = (list(g[node]) + [-1, -2, -3, -4])[:4]

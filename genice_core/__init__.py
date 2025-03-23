@@ -6,7 +6,7 @@ import numpy as np
 import networkx as nx
 from genice_core.topology import noodlize, split_into_simple_paths, balance
 from genice_core.dipole import optimize, vector_sum, _dipole_moment_pbc
-from typing import Union
+from typing import Union, List
 from logging import getLogger, DEBUG
 
 
@@ -24,18 +24,17 @@ def ice_graph(
         vertexPositions (Union[nx.ndarray, None], optional): Positions of the vertices in N x 3 numpy array. Defaults to None.
         isPeriodicBoundary (bool, optional): If True, the positions are considered to be in the fractional coordinate system. Defaults to False.
         dipoleOptimizationCycles (int, optional): Number of iterations to reduce the net dipole moment. Defaults to 0 (no iteration).
-        fixed (nx.DiGraph, optional): A digraph made of edges whose directions are fixed. All edges in fixed must also be included in g. Defaults to an empty graph.
+        fixedEdges (nx.DiGraph, optional): A digraph made of edges whose directions are fixed. All edges in fixed must also be included in g. Defaults to an empty graph.
 
     Returns:
-        nx.DiGraph: An ice graph.
+        nx.DiGraph: An ice graph that obeys the ice rules.
     """
     logger = getLogger()
 
     # derived cycles in extending the fixed edges.
-    derivedCycles = []
+    derivedCycles: List[List[int]] = []
 
     if fixedEdges.size() > 0:
-        # コメントが日本語の部分はまだデバッグ中と思え。
         if logger.isEnabledFor(DEBUG):
             for edge in fixedEdges.edges():
                 logger.debug(f"FIXED EDGE {edge}")
@@ -61,10 +60,6 @@ def ice_graph(
     # Simplify paths ( paths with least crossings )
     paths = list(split_into_simple_paths(len(g), dividedGraph)) + derivedCycles
 
-    # 欠陥がない氷なら、すべてcycleになっているはず。
-    # for path in paths:
-    #     assert path[0] == path[-1]
-
     # arrange the orientations here if you want to balance the polarization
     if vertexPositions is not None:
         # Set the targetPol in order to cancel the polarization in the fixed part.
@@ -78,22 +73,13 @@ def ice_graph(
             targetPol=targetPol,
         )
 
-    # 欠陥がない氷なら、すべてcycleになっているはず。
-    # for path in paths:
-    #     assert path[0] == path[-1]
-
     # Combine everything together
     dg = nx.DiGraph(finallyFixedEdges)
 
-    # 30-->97-->31という辺はextendedFixedEdgesに含まれるべきではない
-    # for edge in extendedFixedEdges.edges():
-    #     logger.debug(f"EDGE eFE {edge}")
-    # logger.debug(f"{list(dg.predecessors(97))} --> 97 --> {list(dg.successors(97))}")
     for path in paths:
         nx.add_path(dg, path)
 
-    # Does the graph really obey the ice rules?
-    # if logger.isEnabledFor(DEBUG):
+    # Verify that the graph obeys the ice rules
     for node in dg:
         if fixedEdges.has_node(node):
             if fixedEdges.in_degree(node) > 2 or fixedEdges.out_degree(node) > 2:
@@ -102,22 +88,5 @@ def ice_graph(
             dg.in_degree(node) <= 2
         ), f"{node} {list(dg.successors(node))} {list(dg.predecessors(node))}"
         assert dg.out_degree(node) <= 2
-
-    # bug? まれにこのチェックでひっかかる場合があるようだ。
-
-    # # この時点で、pathsを検査しておく。
-    # if logger.isEnabledFor(DEBUG):
-    #     gg = nx.Graph(extendedFixedEdges)
-    #     for path in paths:
-    #         nx.add_path(gg, path)
-    #     logger.debug(f"Size g {g.number_of_nodes()} {g.number_of_edges()}")
-    #     logger.debug(f"Size gg {gg.number_of_nodes()} {gg.number_of_edges()}")
-    #     assert g.number_of_edges() == gg.number_of_edges()
-    #     e1 = set([(min(i, j), max(i, j)) for i, j in g.edges()])
-    #     e2 = set([(min(i, j), max(i, j)) for i, j in gg.edges()])
-    #     logger.debug(
-    #         f"{sorted(list(e1 - e2))} edges only in original undirected graph."
-    #     )
-    #     logger.debug(f"{sorted(list(e2 - e1))} edges only in derived directed graph.")
 
     return dg
