@@ -203,8 +203,14 @@ def _remove_dummy_nodes(g: Union[nx.Graph, nx.DiGraph]) -> None:
             g.remove_node(i)
 
 
-def balance(fixed: nx.DiGraph, g: nx.Graph) -> Tuple[Optional[nx.DiGraph], List[List[int]]]:
-    """Extend the prefixed digraph to make the remaining graph balanced.
+def connect_matching_paths(
+    fixed: nx.DiGraph, g: nx.Graph
+) -> Tuple[Optional[nx.DiGraph], List[List[int]]]:
+    """Connect matching paths between two types of edges.
+
+    This function creates a set of paths that connect edges of two different types (A and B).
+    Each path connects one edge of type A with one edge of type B, and no two paths share any edges.
+    The goal is to create a complete set of paths that covers all edges in the graph.
 
     Args:
         fixed (nx.DiGraph): Fixed edges.
@@ -215,6 +221,7 @@ def balance(fixed: nx.DiGraph, g: nx.Graph) -> Tuple[Optional[nx.DiGraph], List[
             - The extended fixed graph (derived cycles are included)
             - A list of derived cycles.
     """
+
     def _choose_free_edge(g: nx.Graph, dg: nx.DiGraph, node: int) -> Optional[int]:
         """Find an unfixed edge of the node.
 
