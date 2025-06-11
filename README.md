@@ -4,14 +4,13 @@
 
 Core algorithms of GenIce2
 
-version 1.0
+version 1.1
 
 ## Requirements
 
 \* python
 \* networkx
 \* numpy
-\* pdoc3
 
 
 ## Installation
