@@ -32,6 +32,7 @@ toml = "^0.10.2"
 jupyter = "^1.1.1"
 py3dmol = "^2.4.0"
 pairlist = "^0.6"
+plotly = "^6.1.2"
 
 
 [tool.poetry.group.test.dependencies]
