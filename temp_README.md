@@ -46,6 +46,8 @@ dg = genice_core.ice_graph(g)
 nx.draw_networkx(dg, pos)
 ```
 
+Additional examples can be found at {{project.urls.example}}
+
 ## Algorithms and how to cite them.
 
 The algorithms to make a depolarized hydrogen-disordered ice are explained in these papers:
@@ -63,4 +65,4 @@ M. Matsumoto, T. Yagasaki, and H. Tanaka, “GenIce-core: Efficient algorithm fo
 
 ## How to contribute
 
-GenIce has been available as open source software on GitHub({{tool.genice.urls.repository}}) since 2015. Feedback, suggestions for improvements and enhancements, bug fixes, etc. are sincerely welcome. Developers and test users are also welcome. If you have any ice that is publicly available but not included in GenIce, please let us know.
+GenIce has been available as open source software on GitHub({{tool.genice.urls.repository}}) since 2015. Feedback, suggestions for improvements and enhancements, bug fixes, etc., are sincerely welcome. Developers and test users are also welcome. If you have any publicly available ice that is not included in GenIce, please let us know.
