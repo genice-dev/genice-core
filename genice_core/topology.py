@@ -286,6 +286,10 @@ def connect_matching_paths(
                 # Start over.
                 logger.info(f"Failed to balance. Starting over ...")
                 return None, None
+            if g.degree(node) == _fixed.degree(node):
+                # Start over.
+                logger.info(f"node {node} has no free edge. Starting over ...")
+                return None, None
             # Find the next node. That may be a decorated one.
             next = _choose_free_edge(g, _fixed, node)
             # fix the edge
