@@ -9,32 +9,45 @@ from genice2.plugin import Format, Lattice
 
 from logging import getLogger, INFO, DEBUG, basicConfig
 
+# basicConfig(level=DEBUG)
 basicConfig(level=INFO)
 logger = getLogger()
 
+rpos = []
+edges = []
+with open("ice11.txt", "r") as f:
+    N = int(f.readline())
+    for i in range(N):
+        rpos.append(list(map(float, f.readline().split())))
+    for edge in f.readlines():
+        edges.append(list(map(int, edge.split())))
+# print(f"{rpos=}")
+# print(f"{edges=}")
 
-for i in range(1000):
+rpos = np.array(rpos)
+
+# edgeをいくつか省くことでわざと周縁を作る。
+# edges = edges[:-10]
+
+
+for i in range(10000):
     np.random.seed(i)
+    print(i)
 
-    lattice = Lattice("ice11")
-    # exectute the stages 1 and 4 to generate molecular positions and the digraph of HBs, and get the raw data.
-    formatter = Format("raw", stage=(1, 4))
-    raw = GenIce(lattice, signature="Ice Ih", rep=(4, 4, 4)).generate_ice(formatter)
-    print(raw["reppositions"].shape)
     # fix some edges randomly
     fixed = nx.DiGraph()
 
-    choice = np.random.random(len(raw["digraph"].edges())) < 0.03
-    for i, edge in enumerate(raw["digraph"].edges()):
+    choice = np.random.random(len(edges)) < 0.01
+    for i, edge in enumerate(edges):
         if choice[i]:
             fixed.add_edge(*edge)
+    logger.debug(f"fixed {fixed.number_of_edges()}")
 
     dg = genice_core.ice_graph(
-        nx.Graph(raw["digraph"]),
-        raw["reppositions"],
+        nx.Graph(edges),
+        rpos,
         isPeriodicBoundary=True,
-        dipoleOptimizationCycles=1000,
+        dipoleOptimizationCycles=100,
         fixedEdges=fixed,
-        max_attempts=10000,
+        max_attempts=100,
     )
-    print("#" * 120, i)

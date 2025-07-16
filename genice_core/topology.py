@@ -2,10 +2,11 @@
 Arrange edges appropriately.
 """
 
-from logging import getLogger, DEBUG
-import networkx as nx
 import numpy as np
-from typing import Union, List, Tuple, Optional
+import networkx as nx
+from logging import getLogger, DEBUG
+from typing import Union, List, Tuple, Optional, Set
+from collections import defaultdict, deque
 
 
 def _trace_path(g: nx.Graph, path: List[int]) -> List[int]:
@@ -203,24 +204,110 @@ def _remove_dummy_nodes(g: Union[nx.Graph, nx.DiGraph]) -> None:
             g.remove_node(i)
 
 
-def connect_matching_paths(
-    fixed: nx.DiGraph, g: nx.Graph
-) -> Tuple[Optional[nx.DiGraph], List[List[int]]]:
-    """Connect matching paths between two types of edges.
-
-    This function creates a set of paths that connect edges of two different types (A and B).
-    Each path connects one edge of type A with one edge of type B, and no two paths share any edges.
-    The goal is to create a complete set of paths that covers all edges in the graph.
+def _find_perimeters(fixed: nx.DiGraph, g: nx.Graph):
+    """Find the perimeters of the graph.
 
     Args:
         fixed (nx.DiGraph): Fixed edges.
         g (nx.Graph): Skeletal graph.
+    """
+    logger = getLogger()
+
+    logger.debug(f"fixed {fixed.number_of_edges()}")
+    logger.debug(f"g {g.number_of_edges()}")
+
+    in_peri = defaultdict(int)
+    out_peri = defaultdict(int)
+    undet_peri = set()
+
+    for node in fixed:
+        # If the node has unfixed edges,
+        if fixed.in_degree[node] + fixed.out_degree[node] < g.degree[node]:
+            # if it is not balanced,
+            diff = fixed.in_degree[node] - fixed.out_degree[node]
+            if diff > 0:
+                out_peri[node] += diff
+            elif diff < 0:
+                in_peri[node] += -diff
+
+    u = set(g.nodes()) - set(fixed.nodes())
+    for node in u:
+        if g.degree[node] in (1, 3):
+            undet_peri.add(node)
+
+    logger.debug(f"{out_peri=}")
+    logger.debug(f"{in_peri=}")
+    logger.debug(f"{undet_peri=}")
+
+    return in_peri, out_peri, undet_peri
+
+
+def find_shortest_path_to_any_target_bfs(
+    graph: nx.DiGraph, start_node, target_nodes: set
+):
+    """
+    始点から、終点の候補のうちいずれか一つへの重み1の最短経路を見つける（BFSベース）。
+
+    Args:
+        graph (nx.DiGraph): networkxの有向グラフオブジェクト。
+        start_node: 始点となるノード。
+        target_nodes (set): 終点の候補となるノードのセット。
 
     Returns:
-        Tuple[Optional[nx.DiGraph], List[List[int]]]: A tuple containing:
-            - The extended fixed graph (derived cycles are included)
-            - A list of derived cycles.
+        tuple: (shortest_path_list, end_of_shortest_path)
+               - shortest_path_list (list): 始点から見つかったターゲットへの最短経路のノードリスト。
+                                            到達できない場合は空リスト。
+               - end_of_shortest_path: 最短経路の終点となったターゲットノード。
+                                       到達できない場合は None。
     """
+
+    # 初期化
+    # BFSでは距離ではなく、経路自体を記録する辞書を使うことが多い
+    # {ノード: そのノードに到達する直前のノード}
+    predecessors = {node: None for node in graph.nodes()}
+
+    # 探索キュー (dequeは高速な両端キュー)
+    # BFSなので、(ノード) を格納。距離は不要（重み1なので距離はパスの長さに等しい）
+    queue = deque([start_node])
+
+    # 訪問済みノード (重複探索を防ぐ)
+    visited = {start_node}
+
+    found_target_node = None
+
+    while queue:
+        current_node = queue.popleft()  # キューの先頭からノードを取り出す (BFSの特性)
+
+        # **** ここが重要な変更点 ****
+        # 現在のノードが終点の候補のいずれかであれば、そこで探索を終了
+        if current_node in target_nodes:
+            found_target_node = current_node
+            break  # ターゲットが見つかったのでループを抜ける
+
+        # 隣接ノードの探索
+        # networkxでは graph.neighbors(node) で隣接ノードをイテレートできる
+        for neighbor in graph.neighbors(current_node):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                predecessors[neighbor] = current_node  # 経路を記録
+                # print(f"{current_node} -> {neighbor}")
+                queue.append(neighbor)  # キューの末尾に追加
+
+    # 最短経路の再構築
+    path = []
+    if found_target_node is not None:
+        current = found_target_node
+        while current is not None:
+            path.append(current)
+            current = predecessors[current]
+        path.reverse()  # 逆順になっているので反転
+
+    return path, found_target_node
+
+
+def connect_matching_paths_BFS(
+    fixed: nx.DiGraph, g: nx.Graph
+) -> Tuple[Optional[nx.DiGraph], List[List[int]]]:
 
     def _choose_free_edge(g: nx.Graph, dg: nx.DiGraph, node: int) -> Optional[int]:
         """Find an unfixed edge of the node.
@@ -242,168 +329,144 @@ def connect_matching_paths(
                 return nei
         return None
 
+    # 個々のノードについて、幅優先探索を行い、最短matchingを見つける。
+    # in_periとout_periは同数とは限らない。本物のperiに到達した場合にも終了する。
+    # 1つパスを見付けたらそれを除外し、残りで同じ作業をくりかえす。
+
     logger = getLogger()
 
     # Make a copy to keep the original graph untouched
     _fixed = nx.DiGraph(fixed)
 
-    in_peri = set()
-    out_peri = set()
-    for node in _fixed:
-        # If the node has unfixed edges,
-        if _fixed.in_degree[node] + _fixed.out_degree[node] < g.degree[node]:
-            # if it is not balanced,
-            if _fixed.in_degree[node] > _fixed.out_degree[node]:
-                out_peri.add(node)
-            elif _fixed.in_degree[node] < _fixed.out_degree[node]:
-                in_peri.add(node)
+    in_peri, out_peri, undet_peri = _find_perimeters(_fixed, g)
+    # 使える辺だけ残す。
+    _undirected = nx.Graph()
+    for i, j in g.edges():
+        if not (_fixed.has_edge(i, j) or _fixed.has_edge(j, i)):
+            _undirected.add_edge(i, j)
+    logger.debug(f"size of _g {_undirected.number_of_edges()}")
 
-    logger.debug(f"out_peri {out_peri}")
-    logger.debug(f"in_peri {in_peri}")
+    # out_periの1つから出発し、in_periまたはundet_periに到達する最短経路をさがす。
+
+    # 問題点
+    # - 二重out_peri2+0の可能性があるので、選んだnodeを即out_periから消してはいけない。
+    # - 経路が二重out_peri2+0をかすめると3+1になり破綻する。破綻を検知して中断させるか、もしくはかすめないようにするか。
+    while len(out_peri) > 0:
+        node = np.random.choice(list(out_peri))
+        out_peri[node] -= 1
+        if out_peri[node] == 0:
+            del out_peri[node]
+
+        targets = set(in_peri) | undet_peri
+        path, end = find_shortest_path_to_any_target_bfs(_undirected, node, targets)
+
+        # 経路の途中でin_periやout_periやundet_periに到達した場合も、それらがperiでなくなることはない。
+        # print(path, list(_fixed.predecessors(704)), list(_fixed.successors(704)))
+        if len(path) == 0:
+            logger.debug(
+                f"No relevant path found from {node} to {targets}"
+                f" {list(_fixed.predecessors(node))} {list(_fixed.successors(node))} {_undirected[node]}"
+            )
+            with open("failed.txt", "w") as f:
+                print(node, file=f)
+                print(*list(targets), file=f)
+                for edge in _undirected.edges():
+                    f.write(f"{edge[0]} {edge[1]}\n")
+
+            # assert False
+            return None, None
+
+        for i, j in zip(path, path[1:]):
+            _fixed.add_edge(i, j)
+            _undirected.remove_edge(i, j)
+        # もし、経路を追加することでendがin_periでなくなるなら、抹消する。
+        if end in in_peri:
+            in_peri[end] -= 1
+            if in_peri[end] == 0:
+                del in_peri[end]
+        else:
+            undet_peri -= {end}
+
+    logger.debug(f"{out_peri=}")
+    logger.debug(f"{in_peri=}")
+    logger.debug(f"{undet_peri=}")
+
+    in_peri_result, undet_peri_result = in_peri, undet_peri
+    in_peri, out_peri, undet_peri = _find_perimeters(_fixed, g)
+
+    while len(in_peri) > 0:
+        # print(len(list(_g.edges())) + len(list(_fixed.edges())))
+        node = np.random.choice(list(in_peri))
+        in_peri[node] -= 1
+        if in_peri[node] == 0:
+            del in_peri[node]
+        targets = set(out_peri) | undet_peri
+        path, end = find_shortest_path_to_any_target_bfs(_undirected, node, targets)
+
+        # 経路の途中でin_periやout_periやundet_periに到達した場合も、それらがperiでなくなることはない。
+        # print(path)
+        if len(path) == 0:
+            logger.debug(f"No relevant path found from {node} to {targets}")
+            return None, None
+
+        for i, j in zip(path, path[1:]):
+            _fixed.add_edge(j, i)
+            _undirected.remove_edge(j, i)
+        if end in out_peri:
+            out_peri[end] -= 1
+            if out_peri[end] == 0:
+                del out_peri[end]
+        else:
+            undet_peri -= {end}
+
+    # logger.debug(f"{out_peri=}")
+    # logger.debug(f"{in_peri=}")
+    # logger.debug(f"{undet_peri=}")
+
+    in_peri, out_peri, undet_peri = _find_perimeters(_fixed, g)
+
+    if logger.isEnabledFor(DEBUG):
+        _g_nodes = set(_undirected.nodes())
+        _fixed_nodes = set(_fixed.nodes())
+
+        g_nodes = set(g.nodes())
+        fixed_nodes = set(fixed.nodes())
+
+        assert _g_nodes | _fixed_nodes == g_nodes | fixed_nodes
+
+        # すべてのノードの、無向辺の数が偶数であることを確認する。
+        for node in g_nodes:
+            if node in _fixed_nodes:
+                in_deg = _fixed.in_degree[node]
+                out_deg = _fixed.out_degree[node]
+            else:
+                in_deg = 0
+                out_deg = 0
+            if node in _g_nodes:
+                deg = _undirected.degree[node]
+            else:
+                deg = 0
+
+            # 固定辺と無向辺の合計は、もとのグラフの辺の数と等しい。
+            assert in_deg + out_deg + deg == g.degree[node]
+
+            # もし、固定辺の先端が中和されずに残っているなら、それは、表面である。
+            if in_deg != out_deg:
+                assert deg % 2 == 0, (node, in_deg, out_deg, deg)
+            # 固定辺の先端が中和されているなら、無向辺の個数はいくつでもよい。
 
     derivedCycles = []
 
-    while len(out_peri) > 0:
-        node = np.random.choice(list(out_peri))
-        out_peri -= {node}
-
-        path = [node]
-        while True:
-            if node < 0:
-                # Path search completed.
-                logger.debug(f"Dead end at {node}. Path is {path}.")
-                break
-            if node in in_peri:
-                # Path search completed.
-                logger.debug(f"Reach at a perimeter node {node}. Path is {path}.")
-                # in_peri and out_peri are now pair-annihilated.
-                in_peri -= {node}
-                break
-            if node in out_peri:
-                logger.debug(f"node {node} is on the out_peri...")
-            # if the node can no longer be balanced,
-            if max(_fixed.in_degree(node), _fixed.out_degree(node)) * 2 > 4:
-                # Start over.
-                logger.info(f"Failed to balance. Starting over ...")
-                return None, None
-            if g.degree(node) == _fixed.degree(node):
-                # Start over.
-                logger.info(f"node {node} has no free edge. Starting over ...")
-                return None, None
-            # Find the next node. That may be a decorated one.
-            next = _choose_free_edge(g, _fixed, node)
-            # fix the edge
-            _fixed.add_edge(node, next)
-            # record to the path
-            if next >= 0:
-                path.append(next)
-                # if still incoming edges are more than outgoing ones,
-                if _fixed.in_degree[node] > _fixed.out_degree[node]:
-                    # It is still a perimeter.
-                    out_peri.add(node)
-            # go ahead
-            node = next
-
-            # if it is circular, i.e. if the last node of the path has already included in the path,
-            try:
-                loc = path[:-1].index(node)
-                # Separate the cycle from the path and store in derivedCycles.
-                derivedCycles.append(path[loc:])
-                # and shorten the path
-                path = path[: loc + 1]
-            except ValueError:
-                pass
-
-    # starting from in_peri
-    # Almost the same process, again.
-    while len(in_peri) > 0:
-        node = np.random.choice(list(in_peri))
-        in_peri -= {node}
-        logger.debug(
-            f"first node {node}, its neighbors {g[node]} {list(_fixed.successors(node))} {list(_fixed.predecessors(node))}"
-        )
-
-        path = [node]
-        while True:
-            if node < 0:
-                # Path search completed.
-                logger.debug(f"Dead end at {node}. Path is {path} {in_peri}.")
-                break
-            if node in out_peri:
-                # Path search completed.
-                logger.debug(f"Reach at a perimeter node {node}. Path is {path}.")
-                # in_peri and out_peri are now pair-annihilated.
-                out_peri -= {node}
-                break
-            if node in in_peri:
-                logger.debug(f"node {node} is on the in_peri...")
-                # out_periのノードを何度も通ると、欠陥になってしまう。
-            if max(_fixed.in_degree(node), _fixed.out_degree(node)) * 2 > 4:
-                logger.info(f"Failed to balance. Starting over ...")
-                return None, None
-            if g.degree(node) == _fixed.degree(node):
-                # Start over.
-                logger.info(f"node {node} has no free edge. Starting over ...")
-                return None, None
-            next = _choose_free_edge(g, _fixed, node)
-            # record to the path
-            if next >= 0:
-                path.append(next)
-            # fix the edge  #####
-            _fixed.add_edge(next, node)
-            # if still incoming edges are more than outgoing ones,
-            if next >= 0:
-                #####
-                if _fixed.in_degree[node] < _fixed.out_degree[node]:
-                    in_peri.add(node)
-                    logger.debug(
-                        f"{node} is added to in_peri {_fixed.in_degree[node]} . {_fixed.out_degree[node]}"
-                    )
-            # go ahead
-            node = next
-            # if it is circular
-            try:
-                loc = path[:-1].index(node)
-                derivedCycles.append(path[loc:])
-                path = path[: loc + 1]
-            except ValueError:
-                pass
-
-    if logger.isEnabledFor(DEBUG):
-        logger.debug(f"size of g {g.number_of_edges()}")
-        logger.debug(f"size of fixed {_fixed.number_of_edges()}")
-        assert len(in_peri) == 0, f"In-peri remains. {in_peri}"
-        assert len(out_peri) == 0, f"Out-peri remains. {out_peri}"
-        logger.debug("re-check perimeters")
-
-        in_peri = set()
-        out_peri = set()
-        for node in _fixed:
-            if node >= 0:
-                if _fixed.in_degree[node] + _fixed.out_degree[node] < g.degree[node]:
-                    if _fixed.in_degree[node] > _fixed.out_degree[node]:
-                        out_peri.add(node)
-                    elif _fixed.in_degree[node] < _fixed.out_degree[node]:
-                        in_peri.add(node)
-
-        assert len(in_peri) == 0, f"In-peri remains. {in_peri}"
-        assert len(out_peri) == 0, f"Out-peri remains. {out_peri}"
-
-        # 拡大したグラフが指定された固定辺をすべて含んでいることを確認。
-        for edge in fixed.edges():
-            assert _fixed.has_edge(*edge)
-
-    # # remove edges in derivedCycles from _fixed
-    # for cycle in derivedCycles:
-    #     for edge in zip(cycle, cycle[1:]):
-    #         _fixed.remove_edge(*edge)
-
-    _remove_dummy_nodes(_fixed)
-
-    if logger.isEnabledFor(DEBUG):
-        logger.debug(f"Number of fixed edges is {_fixed.size()} / {g.size()}")
-        logger.debug(f"Number of free cycles: {len(derivedCycles)}")
-        ne = sum([len(cycle) - 1 for cycle in derivedCycles])
-        logger.debug(f"Number of edges in free cycles: {ne}")
-
     return _fixed, derivedCycles
+
+
+if __name__ == "__main__":
+    g = nx.Graph()
+    with open("failed.txt", "r") as f:
+        source = int(f.readline())
+        targets = list(map(int, f.readline().split()))
+        for line in f:
+            i, j = map(int, line.split())
+            g.add_edge(i, j)
+    print(source, targets)
+    print(find_shortest_path_to_any_target_bfs(g, source, targets))

@@ -7,7 +7,7 @@ import networkx as nx
 from genice_core.topology import (
     noodlize,
     split_into_simple_paths,
-    connect_matching_paths,
+    connect_matching_paths_BFS,
 )
 from genice_core.dipole import optimize, vector_sum, _dipole_moment_pbc
 from typing import Union, List, Optional
@@ -50,7 +50,7 @@ def ice_graph(
         for attempt in range(max_attempts):
             # It returns Nones when it fails to connect paths.
             # The processedEdges also include derivedCycles.
-            processedEdges, derivedCycles = connect_matching_paths(fixedEdges, g)
+            processedEdges, derivedCycles = connect_matching_paths_BFS(fixedEdges, g)
             if processedEdges:
                 break
             logger.info(f"Attempt {attempt + 1}/{max_attempts} failed to connect paths")
