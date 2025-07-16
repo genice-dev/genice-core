@@ -37,7 +37,7 @@ for i in range(10000):
     # fix some edges randomly
     fixed = nx.DiGraph()
 
-    choice = np.random.random(len(edges)) < 0.01
+    choice = np.random.random(len(edges)) < 0.1
     for i, edge in enumerate(edges):
         if choice[i]:
             fixed.add_edge(*edge)
