@@ -341,6 +341,10 @@ def connect_matching_paths(
             if max(_fixed.in_degree(node), _fixed.out_degree(node)) * 2 > 4:
                 logger.info(f"Failed to balance. Starting over ...")
                 return None, None
+            if g.degree(node) == _fixed.degree(node):
+                # Start over.
+                logger.info(f"node {node} has no free edge. Starting over ...")
+                return None, None
             next = _choose_free_edge(g, _fixed, node)
             # record to the path
             if next >= 0:
