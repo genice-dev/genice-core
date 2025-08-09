@@ -43,8 +43,8 @@ pytest = "^7.4.4"
 "Homepage" = "https://github.com/genice-dev/genice-core"
 "Bug Tracker" = "https://github.com/genice-dev/genice-core/issues"
 "manual" = "https://genice-dev.github.io/genice-core"
-"example" = "https://github.com/vitroid/genice-core"
+"example" = "https://github.com/genice-dev/genice-core"
 
 [tool.genice.urls]
-"logo" = "https://raw.githubusercontent.com/vitroid/GenIce/develop/logo/genice-v0.png"
+"logo" = "https://raw.githubusercontent.com/genice-dev/GenIce/develop/logo/genice-v0.png"
 "repository" = "https://pypi.python.org/pypi/GenIce"
