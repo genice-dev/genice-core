@@ -14,7 +14,7 @@ authors = [
 ]
 description = "Core algorithms of GenIce2"
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">=3.10,<4.0"
 # readme = "README.md"
 # requires-python = ">=3.9"
 # classifiers = [
@@ -26,6 +26,7 @@ python = ">=3.9,<4.0"
 networkx = "^3.2.1"
 numpy = ">=1.26.2"
 
+
 [tool.poetry.group.dev.dependencies]
 pdoc = "^14.1.0"
 toml = "^0.10.2"
@@ -33,6 +34,9 @@ jupyter = "^1.1.1"
 py3dmol = "^2.4.0"
 pairlist = "^0.6"
 plotly = "^6.1.2"
+clustice = "^0.8.0"
+genice2 = {version = "^2.2.12.4", python = ">=3.10"}
+matplotlib = "^3.10.8"
 
 
 [tool.poetry.group.test.dependencies]
