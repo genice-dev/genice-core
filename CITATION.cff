@@ -5,7 +5,7 @@ authors:
   given-names: "Masakazu"
   orcid: "https://orcid.org/0000-0002-6799-6813"
 title: "GenIce-core: An Improved Algorithm to Generate Hydrogen-Disordered Ice"
-version: 1.1.4
+version: 1.2.0
 # doi: 10.5281/zenodo.1234
 date-released: 2023-10-20
 url: "https://github.com/genice-dev/genice-core"

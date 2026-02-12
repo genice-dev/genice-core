@@ -1,7 +1,7 @@
 SOURCES=$(wildcard genice_core/*.py)
 PKGNAME=genice-core
 
-all: README.md
+all: README.md CITATION.cff 
 	echo Hello.
 
 # https://qiita.com/yukinarit/items/0996180032c077443efb
