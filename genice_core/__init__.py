@@ -9,7 +9,7 @@ from genice_core.topology import (
     split_into_simple_paths,
     connect_matching_paths,
 )
-from genice_core.dipole import optimize, vector_sum, _dipole_moment_pbc
+from genice_core.dipole import optimize, vector_sum
 from genice_core.compat import accept_aliases
 from typing import Union, List, Optional
 from logging import getLogger, DEBUG
@@ -29,21 +29,38 @@ def ice_graph(
     dipole_optimization_cycles: int = 0,
     fixed_edges: nx.DiGraph = nx.DiGraph(),
     pairing_attempts: int = 100,
+    target_pol: Optional[np.ndarray] = np.zeros(3),
 ) -> Optional[nx.DiGraph]:
     """Make a digraph that obeys the ice rules.
 
     Args:
-        g (nx.Graph): An ice-like undirected graph. Node labels in the graph g must be consecutive integers from 0 to N-1, where N is the number of nodes, and the labels correspond to the order in vertex_positions.
-        vertex_positions (Union[nx.ndarray, None], optional): Positions of the vertices in N x 3 numpy array. Defaults to None.
-        is_periodic_boundary (bool, optional): If True, the positions are considered to be in the fractional coordinate system. Defaults to False.
-        dipole_optimization_cycles (int, optional): Number of iterations to reduce the net dipole moment. Defaults to 0 (no iteration).
-        fixed_edges (nx.DiGraph, optional): A digraph made of edges whose directions are fixed. All edges in fixed must also be included in g. Defaults to an empty graph.
-        pairing_attempts (int, optional): Maximum number of attempts to pair up the fixed edges.
+        g (nx.Graph): An ice-like undirected graph. Node labels must be consecutive integers 0 to N-1, corresponding to the order in vertex_positions when given.
+        vertex_positions (Union[np.ndarray, None], optional): Positions of the vertices, N x 3 array. Defaults to None. If None, dipole-related options are ignored.
+        fixed_edges (nx.DiGraph, optional): A digraph of edges whose directions are fixed; all must be in g. Defaults to an empty graph.
+
+        Only when vertex_positions is not None (dipole optimization):
+        is_periodic_boundary (bool, optional): If True, positions are in fractional coordinates. Defaults to False.
+        dipole_optimization_cycles (int, optional): Number of iterations to reduce the net dipole moment. Defaults to 0 (no optimization).
+        target_pol (Optional[np.ndarray], optional): Target polarization; subtracted from the net polarization. Used only when dipole_optimization_cycles > 0. Defaults to zeros(3).
+
+        Only when fixed_edges is not empty:
+        pairing_attempts (int, optional): Maximum attempts to pair up the fixed edges. Defaults to 100.
 
     Returns:
         Optional[nx.DiGraph]: An ice graph that obeys the ice rules, or None if no solution is found within pairing_attempts.
     """
     logger = getLogger()
+
+    if logger.isEnabledFor(DEBUG):
+        if vertex_positions is None and (
+            is_periodic_boundary or dipole_optimization_cycles != 0 or np.any(target_pol != 0)
+        ):
+            logger.debug(
+                "vertex_positions is None; is_periodic_boundary, "
+                "dipole_optimization_cycles, and target_pol are ignored."
+            )
+        if fixed_edges.size() == 0 and pairing_attempts != 100:
+            logger.debug("fixed_edges is empty; pairing_attempts is ignored.")
 
     # derived cycles in extending the fixed edges.
     derived_cycles: List[List[int]] = []
@@ -85,7 +102,7 @@ def ice_graph(
     # arrange the orientations here if you want to balance the polarization
     if vertex_positions is not None:
         # Set the target_pol in order to cancel the polarization in the fixed part.
-        target_pol = -vector_sum(
+        target_pol -= vector_sum(
             finally_fixed_edges, vertex_positions, is_periodic_boundary
         )
 
