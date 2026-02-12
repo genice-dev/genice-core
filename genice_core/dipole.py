@@ -3,10 +3,12 @@ Optimizes the orientations of directed paths to reduce the net dipole moment.
 """
 
 from logging import getLogger, DEBUG
-from typing import Union, List, Optional
+from typing import List, Optional
 
 import numpy as np
 import networkx as nx
+
+from genice_core.compat import accept_aliases
 
 
 def vector_sum(
@@ -49,12 +51,18 @@ def _dipole_moment_pbc(path: List[int], vertexPositions: np.ndarray) -> np.ndarr
     return np.sum(relativeVector, axis=0)
 
 
+@accept_aliases(
+    vertexPositions="vertex_positions",
+    dipoleOptimizationCycles="dipole_optimization_cycles",
+    isPeriodicBoundary="is_periodic_boundary",
+    targetPol="target_pol",
+)
 def optimize(
     paths: List[List[int]],
-    vertexPositions: np.ndarray,
-    dipoleOptimizationCycles: int = 2000,
-    isPeriodicBoundary: bool = False,
-    targetPol: Optional[np.ndarray] = None,
+    vertex_positions: np.ndarray,
+    dipole_optimization_cycles: int = 2000,
+    is_periodic_boundary: bool = False,
+    target_pol: Optional[np.ndarray] = None,
 ) -> List[List[int]]:
     """Minimize the net polarization by flipping several paths.
 
@@ -62,26 +70,26 @@ def optimize(
 
     Args:
         paths (List[List[int]]): List of directed paths. A path is a list of integers. A path with identical labels at first and last items are considered to be cyclic.
-        vertexPositions (np.ndarray): Positions of the nodes.
-        dipoleOptimizationCycles (int, optional): Number of random orientations for the paths. Defaults to 2000.
-        isPeriodicBoundary (bool, optional): If `True`, the positions of the nodes must be in the fractional coordinate system. Defaults to False.
-        targetPol (Optional[np.ndarray], optional): Target value for the dipole-moment optimization. Defaults to None.
+        vertex_positions (np.ndarray): Positions of the nodes.
+        dipole_optimization_cycles (int, optional): Number of random orientations for the paths. Defaults to 2000.
+        is_periodic_boundary (bool, optional): If `True`, the positions of the nodes must be in the fractional coordinate system. Defaults to False.
+        target_pol (Optional[np.ndarray], optional): Target value for the dipole-moment optimization. Defaults to None.
 
     Returns:
         List[List[int]]: Optimized paths with minimized net polarization.
     """
     logger = getLogger()
 
-    if targetPol is None:
-        targetPol = np.zeros_like(vertexPositions[0])
+    if target_pol is None:
+        target_pol = np.zeros_like(vertex_positions[0])
 
     # polarized chains and cycles. Small cycle of dipoles are eliminated.
     polarizedEdges: List[int] = []
 
     dipoles: List[np.ndarray] = []
     for i, path in enumerate(paths):
-        if isPeriodicBoundary:
-            chainPol = _dipole_moment_pbc(path, vertexPositions)
+        if is_periodic_boundary:
+            chainPol = _dipole_moment_pbc(path, vertex_positions)
             # if it is large enough, i.e. if it is a spanning cycle or a chain
             if chainPol @ chainPol > 1e-6:
                 dipoles.append(chainPol)
@@ -90,41 +98,41 @@ def optimize(
             # dipole moment of a path; NOTE: No PBC.
             if path[0] != path[-1]:
                 # If no PBC, a chain pol is simply an end-to-end pol.
-                chainPol = vertexPositions[path[-1]] - vertexPositions[path[0]]
+                chainPol = vertex_positions[path[-1]] - vertex_positions[path[0]]
                 dipoles.append(chainPol)
                 polarizedEdges.append(i)
     dipoles = np.array(dipoles)
 
     optimalParities = np.random.randint(2, size=len(dipoles)) * 2 - 1
-    optimalPol = optimalParities @ dipoles - targetPol
+    minimal_residual_pol = optimalParities @ dipoles - target_pol
 
     if logger.isEnabledFor(DEBUG):
-        logger.debug(f"initial {optimalParities @ dipoles} target {targetPol}")
+        logger.debug(f"initial {optimalParities @ dipoles} target {target_pol}")
         logger.debug(f"dipoles {dipoles}")
         for i, parity in zip(polarizedEdges, optimalParities):
             logger.debug(f"{parity}: {paths[i]}")
 
     loop = 0
-    for loop in range(dipoleOptimizationCycles):
+    for loop in range(dipole_optimization_cycles):
         # random sequence of +1/-1
         parities = np.random.randint(2, size=len(dipoles)) * 2 - 1
 
         # Set directions to chains by parity.
-        pol = parities @ dipoles - targetPol
+        residual_pol = parities @ dipoles - target_pol
 
         # If the new directions give better (smaller) net dipole moment,
-        if pol @ pol < optimalPol @ optimalPol:
+        if residual_pol @ residual_pol < minimal_residual_pol @ minimal_residual_pol:
             # that is the optimal
-            optimalPol = pol
+            minimal_residual_pol = residual_pol
             optimalParities = parities
-            logger.debug(f"Depol. loop {loop}: {optimalPol}")
+            logger.debug(f"Depol. loop {loop}: {minimal_residual_pol}")
 
             # if well-converged,
-            if optimalPol @ optimalPol < 1e-4:
+            if minimal_residual_pol @ minimal_residual_pol < 1e-4:
                 logger.debug("Optimized.")
                 break
 
-    logger.info(f"Depol. loop {loop}: {optimalPol}")
+    logger.info(f"Depol. loop {loop}: {minimal_residual_pol}")
 
     # invert some chains according to parity_optimal
     for i, parity in zip(polarizedEdges, optimalParities):
