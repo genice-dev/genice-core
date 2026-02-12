@@ -3,16 +3,17 @@ import networkx as nx
 from clustice.graph import great_icosahedron
 
 
+
 def test_ice_graph():
     g = great_icosahedron(10)
 
-    vertexPositions = [g.nodes[i]["pos"] for i in g]
+    vertex_positions = [g.nodes[i]["pos"] for i in g]
     dg = ice_graph(
         g,
-        vertexPositions=vertexPositions,
-        isPeriodicBoundary=False,
-        dipoleOptimizationCycles=1000,
-        # fixedEdges=nx.DiGraph([(0, 8096)]),
+        vertex_positions=vertex_positions,
+        is_periodic_boundary=False,
+        dipole_optimization_cycles=1000,
+        # fixed_edges=nx.DiGraph([(0, 8096)]),
     )
 
 

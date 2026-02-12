@@ -38,6 +38,7 @@
 
             <h2>Submodules</h2>
             <ul>
+                    <li><a href="genice_core/compat.html">compat</a></li>
                     <li><a href="genice_core/dipole.html">dipole</a></li>
                     <li><a href="genice_core/topology.html">topology</a></li>
             </ul>
@@ -69,14 +70,13 @@ genice_core    </h1>
 
 <p>Core algorithms of GenIce2</p>
 
-<p>version 1.0</p>
+<p>version 1.1.4</p>
 
 <h2 id="requirements">Requirements</h2>
 
 <p>* python
 * networkx
-* numpy
-* pdoc3</p>
+* numpy</p>
 
 <h2 id="installation">Installation</h2>
 
@@ -100,9 +100,9 @@ Install with pip3.</p>
 <p>Make an ice graph from a given undirected graph.</p>
 
 <div class="pdoc-code codehilite">
-<pre><span></span><code><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
-<span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="kn">import</span> <span class="nn">genice_core</span>
+<pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">genice_core</span>
 
 <span class="c1"># np.random.seed(12345)</span>
 
@@ -115,6 +115,8 @@ Install with pip3.</p>
 <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx</span><span class="p">(</span><span class="n">dg</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
 </code></pre>
 </div>
+
+<p>Additional examples can be found at <a href="https://github.com/vitroid/genice-core">https://github.com/vitroid/genice-core</a></p>
 
 <h2 id="algorithms-and-how-to-cite-them">Algorithms and how to cite them.</h2>
 
@@ -134,7 +136,7 @@ Install with pip3.</p>
 
 <h2 id="how-to-contribute">How to contribute</h2>
 
-<p>GenIce has been available as open source software on GitHub(<a href="https://pypi.python.org/pypi/GenIce">https://pypi.python.org/pypi/GenIce</a>) since 2015. Feedback, suggestions for improvements and enhancements, bug fixes, etc. are sincerely welcome. Developers and test users are also welcome. If you have any ice that is publicly available but not included in GenIce, please let us know.</p>
+<p>GenIce has been available as open source software on GitHub(<a href="https://pypi.python.org/pypi/GenIce">https://pypi.python.org/pypi/GenIce</a>) since 2015. Feedback, suggestions for improvements and enhancements, bug fixes, etc., are sincerely welcome. Developers and test users are also welcome. If you have any publicly available ice that is not included in GenIce, please let us know.</p>
 </div>
 
                         <input id="mod-genice_core-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
@@ -145,125 +147,135 @@ Install with pip3.</p>
 </span><span id="L-2"><a href="#L-2"><span class="linenos">  2</span></a><span class="sd">.. include:: ../README.md</span>
 </span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a>
-</span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a><span class="kn">from</span> <span class="nn">genice_core.topology</span> <span class="kn">import</span> <span class="n">noodlize</span><span class="p">,</span> <span class="n">split_into_simple_paths</span><span class="p">,</span> <span class="n">balance</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a><span class="kn">from</span> <span class="nn">genice_core.dipole</span> <span class="kn">import</span> <span class="n">optimize</span><span class="p">,</span> <span class="n">vector_sum</span><span class="p">,</span> <span class="n">_dipole_moment_pbc</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a><span class="kn">from</span> <span class="nn">logging</span> <span class="kn">import</span> <span class="n">getLogger</span><span class="p">,</span> <span class="n">DEBUG</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a>
-</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a>
-</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a><span class="k">def</span> <span class="nf">ice_graph</span><span class="p">(</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a>    <span class="n">g</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a>    <span class="n">vertexPositions</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a>    <span class="n">isPeriodicBoundary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a>    <span class="n">dipoleOptimizationCycles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a>    <span class="n">fixedEdges</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(),</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">:</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Make a digraph that obeys the ice rules.</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a>
-</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a><span class="sd">    Args:</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a><span class="sd">        g (nx.Graph): An ice-like undirected graph. Node labels in the graph g must be consecutive integers from 0 to N-1, where N is the number of nodes, and the labels correspond to the order in vertexPositions.</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a><span class="sd">        vertexPositions (Union[nx.ndarray, None], optional): Positions of the vertices in N x 3 numpy array. Defaults to None.</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a><span class="sd">        isPeriodicBoundary (bool, optional): If True, the positions are considered to be in the fractional coordinate system. Defaults to False.</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a><span class="sd">        dipoleOptimizationCycles (int, optional): Number of iterations to reduce the net dipole moment. Defaults to 0 (no iteration).</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a><span class="sd">        fixed (nx.DiGraph, optional): A digraph made of edges whose directions are fixed. All edges in fixed must also be included in g. Defaults to an empty graph.</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a>
-</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a><span class="sd">    Returns:</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a><span class="sd">        nx.DiGraph: An ice graph.</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a>    <span class="n">logger</span> <span class="o">=</span> <span class="n">getLogger</span><span class="p">()</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a>
-</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a>    <span class="c1"># derived cycles in extending the fixed edges.</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a>    <span class="n">derivedCycles</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a>
-</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a>    <span class="k">if</span> <span class="n">fixedEdges</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a>        <span class="c1"># コメントが日本語の部分はまだデバッグ中と思え。</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a>        <span class="k">if</span> <span class="n">logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">DEBUG</span><span class="p">):</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a>            <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">fixedEdges</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a>                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FIXED EDGE </span><span class="si">{</span><span class="n">edge</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a>
-</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a>        <span class="c1"># balance fixed edges</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a>        <span class="n">processedEdges</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a>        <span class="k">while</span> <span class="n">processedEdges</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a>            <span class="c1"># It returns Nones when it fails to balance.</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a>            <span class="c1"># The processedEdges also include derivedCycles.</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a>            <span class="n">processedEdges</span><span class="p">,</span> <span class="n">derivedCycles</span> <span class="o">=</span> <span class="n">balance</span><span class="p">(</span><span class="n">fixedEdges</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a>    <span class="k">else</span><span class="p">:</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>        <span class="n">processedEdges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a>
-</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a>    <span class="c1"># really fixed in balance()</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a>    <span class="n">finallyFixedEdges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">processedEdges</span><span class="p">)</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>    <span class="k">for</span> <span class="n">cycle</span> <span class="ow">in</span> <span class="n">derivedCycles</span><span class="p">:</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a>        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cycle</span><span class="p">,</span> <span class="n">cycle</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a>            <span class="n">finallyFixedEdges</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="o">*</span><span class="n">edge</span><span class="p">)</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a>
-</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a>    <span class="c1"># Divide the remaining (unfixed) part of the graph into a noodle graph</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>    <span class="n">dividedGraph</span> <span class="o">=</span> <span class="n">noodlize</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">processedEdges</span><span class="p">)</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>
-</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a>    <span class="c1"># Simplify paths ( paths with least crossings )</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a>    <span class="n">paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">split_into_simple_paths</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">dividedGraph</span><span class="p">))</span> <span class="o">+</span> <span class="n">derivedCycles</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>
-</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>    <span class="c1"># 欠陥がない氷なら、すべてcycleになっているはず。</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a>    <span class="c1"># for path in paths:</span>
-</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a>    <span class="c1">#     assert path[0] == path[-1]</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">genice_core.topology</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a>    <span class="n">noodlize</span><span class="p">,</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a>    <span class="n">split_into_simple_paths</span><span class="p">,</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a>    <span class="n">connect_matching_paths</span><span class="p">,</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a><span class="p">)</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">genice_core.dipole</span><span class="w"> </span><span class="kn">import</span> <span class="n">optimize</span><span class="p">,</span> <span class="n">vector_sum</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">genice_core.compat</span><span class="w"> </span><span class="kn">import</span> <span class="n">accept_aliases</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">getLogger</span><span class="p">,</span> <span class="n">DEBUG</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a>
+</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a>
+</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a><span class="nd">@accept_aliases</span><span class="p">(</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a>    <span class="n">vertexPositions</span><span class="o">=</span><span class="s2">&quot;vertex_positions&quot;</span><span class="p">,</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a>    <span class="n">isPeriodicBoundary</span><span class="o">=</span><span class="s2">&quot;is_periodic_boundary&quot;</span><span class="p">,</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a>    <span class="n">dipoleOptimizationCycles</span><span class="o">=</span><span class="s2">&quot;dipole_optimization_cycles&quot;</span><span class="p">,</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a>    <span class="n">fixedEdges</span><span class="o">=</span><span class="s2">&quot;fixed_edges&quot;</span><span class="p">,</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a>    <span class="n">pairingAttempts</span><span class="o">=</span><span class="s2">&quot;pairing_attempts&quot;</span><span class="p">,</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a><span class="p">)</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a><span class="k">def</span><span class="w"> </span><span class="nf">ice_graph</span><span class="p">(</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a>    <span class="n">g</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a>    <span class="n">vertex_positions</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a>    <span class="n">is_periodic_boundary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a>    <span class="n">dipole_optimization_cycles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a>    <span class="n">fixed_edges</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(),</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a>    <span class="n">pairing_attempts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a>    <span class="n">target_pol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">]:</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Make a digraph that obeys the ice rules.</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a>
+</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a><span class="sd">    Args:</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a><span class="sd">        g (nx.Graph): An ice-like undirected graph. Node labels must be consecutive integers 0 to N-1, corresponding to the order in vertex_positions when given.</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a><span class="sd">        vertex_positions (Union[np.ndarray, None], optional): Positions of the vertices, N x 3 array. Defaults to None. If None, dipole-related options are ignored.</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a><span class="sd">        fixed_edges (nx.DiGraph, optional): A digraph of edges whose directions are fixed; all must be in g. Defaults to an empty graph.</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a>
+</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a><span class="sd">        Only when vertex_positions is not None (dipole optimization):</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a><span class="sd">        is_periodic_boundary (bool, optional): If True, positions are in fractional coordinates. Defaults to False.</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a><span class="sd">        dipole_optimization_cycles (int, optional): Number of iterations to reduce the net dipole moment. Defaults to 0 (no optimization).</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a><span class="sd">        target_pol (Optional[np.ndarray], optional): Target polarization; subtracted from the net polarization. Used only when dipole_optimization_cycles &gt; 0. Defaults to zeros(3).</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a>
+</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a><span class="sd">        Only when fixed_edges is not empty:</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a><span class="sd">        pairing_attempts (int, optional): Maximum attempts to pair up the fixed edges. Defaults to 100.</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a>
+</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a><span class="sd">    Returns:</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a><span class="sd">        Optional[nx.DiGraph]: An ice graph that obeys the ice rules, or None if no solution is found within pairing_attempts.</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a>    <span class="n">logger</span> <span class="o">=</span> <span class="n">getLogger</span><span class="p">()</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a>
+</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>    <span class="k">if</span> <span class="n">logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">DEBUG</span><span class="p">):</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a>        <span class="k">if</span> <span class="n">vertex_positions</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a>            <span class="n">is_periodic_boundary</span> <span class="ow">or</span> <span class="n">dipole_optimization_cycles</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">target_pol</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a>        <span class="p">):</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a>            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>                <span class="s2">&quot;vertex_positions is None; is_periodic_boundary, &quot;</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>                <span class="s2">&quot;dipole_optimization_cycles, and target_pol are ignored.&quot;</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a>            <span class="p">)</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a>        <span class="k">if</span> <span class="n">fixed_edges</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">pairing_attempts</span> <span class="o">!=</span> <span class="mi">100</span><span class="p">:</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;fixed_edges is empty; pairing_attempts is ignored.&quot;</span><span class="p">)</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>
+</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a>    <span class="c1"># derived cycles in extending the fixed edges.</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a>    <span class="n">derived_cycles</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
 </span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a>
-</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>    <span class="c1"># arrange the orientations here if you want to balance the polarization</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>    <span class="k">if</span> <span class="n">vertexPositions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>        <span class="c1"># Set the targetPol in order to cancel the polarization in the fixed part.</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a>        <span class="n">targetPol</span> <span class="o">=</span> <span class="o">-</span><span class="n">vector_sum</span><span class="p">(</span><span class="n">finallyFixedEdges</span><span class="p">,</span> <span class="n">vertexPositions</span><span class="p">,</span> <span class="n">isPeriodicBoundary</span><span class="p">)</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>    <span class="k">if</span> <span class="n">fixed_edges</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>        <span class="k">if</span> <span class="n">logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">DEBUG</span><span class="p">):</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>            <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">fixed_edges</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a>                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FIXED EDGE </span><span class="si">{</span><span class="n">edge</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a>
-</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a>        <span class="n">paths</span> <span class="o">=</span> <span class="n">optimize</span><span class="p">(</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>            <span class="n">paths</span><span class="p">,</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>            <span class="n">vertexPositions</span><span class="p">,</span>
-</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>            <span class="n">isPeriodicBoundary</span><span class="o">=</span><span class="n">isPeriodicBoundary</span><span class="p">,</span>
-</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a>            <span class="n">dipoleOptimizationCycles</span><span class="o">=</span><span class="n">dipoleOptimizationCycles</span><span class="p">,</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>            <span class="n">targetPol</span><span class="o">=</span><span class="n">targetPol</span><span class="p">,</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>        <span class="p">)</span>
-</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>
-</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>    <span class="c1"># 欠陥がない氷なら、すべてcycleになっているはず。</span>
-</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>    <span class="c1"># for path in paths:</span>
-</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a>    <span class="c1">#     assert path[0] == path[-1]</span>
-</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>
-</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a>    <span class="c1"># Combine everything together</span>
-</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>    <span class="n">dg</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">finallyFixedEdges</span><span class="p">)</span>
-</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a>
-</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>    <span class="c1"># 30--&gt;97--&gt;31という辺はextendedFixedEdgesに含まれるべきではない</span>
-</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>    <span class="c1"># for edge in extendedFixedEdges.edges():</span>
-</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>    <span class="c1">#     logger.debug(f&quot;EDGE eFE {edge}&quot;)</span>
-</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a>    <span class="c1"># logger.debug(f&quot;{list(dg.predecessors(97))} --&gt; 97 --&gt; {list(dg.successors(97))}&quot;)</span>
-</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
-</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>        <span class="n">nx</span><span class="o">.</span><span class="n">add_path</span><span class="p">(</span><span class="n">dg</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
-</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a>
-</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>    <span class="c1"># Does the graph really obey the ice rules?</span>
-</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>    <span class="c1"># if logger.isEnabledFor(DEBUG):</span>
-</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">dg</span><span class="p">:</span>
-</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>        <span class="k">if</span> <span class="n">fixedEdges</span><span class="o">.</span><span class="n">has_node</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
-</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>            <span class="k">if</span> <span class="n">fixedEdges</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">fixedEdges</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
-</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>                <span class="k">continue</span>
-</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>        <span class="k">assert</span> <span class="p">(</span>
-</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>            <span class="n">dg</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span>
-</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">dg</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">dg</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>        <span class="k">assert</span> <span class="n">dg</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span>
-</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>
-</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>    <span class="c1"># bug? まれにこのチェックでひっかかる場合があるようだ。</span>
-</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>
-</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>    <span class="c1"># # この時点で、pathsを検査しておく。</span>
-</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>    <span class="c1"># if logger.isEnabledFor(DEBUG):</span>
-</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a>    <span class="c1">#     gg = nx.Graph(extendedFixedEdges)</span>
-</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>    <span class="c1">#     for path in paths:</span>
-</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a>    <span class="c1">#         nx.add_path(gg, path)</span>
-</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>    <span class="c1">#     logger.debug(f&quot;Size g {g.number_of_nodes()} {g.number_of_edges()}&quot;)</span>
-</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>    <span class="c1">#     logger.debug(f&quot;Size gg {gg.number_of_nodes()} {gg.number_of_edges()}&quot;)</span>
-</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>    <span class="c1">#     assert g.number_of_edges() == gg.number_of_edges()</span>
-</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>    <span class="c1">#     e1 = set([(min(i, j), max(i, j)) for i, j in g.edges()])</span>
-</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>    <span class="c1">#     e2 = set([(min(i, j), max(i, j)) for i, j in gg.edges()])</span>
-</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>    <span class="c1">#     logger.debug(</span>
-</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a>    <span class="c1">#         f&quot;{sorted(list(e1 - e2))} edges only in original undirected graph.&quot;</span>
-</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>    <span class="c1">#     )</span>
-</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a>    <span class="c1">#     logger.debug(f&quot;{sorted(list(e2 - e1))} edges only in derived directed graph.&quot;)</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a>        <span class="c1"># connect matching paths</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>        <span class="n">processed_edges</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>        <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pairing_attempts</span><span class="p">):</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>            <span class="c1"># It returns Nones when it fails to connect paths.</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a>            <span class="c1"># The processed_edges also include derived_cycles.</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>            <span class="n">processed_edges</span><span class="p">,</span> <span class="n">derived_cycles</span> <span class="o">=</span> <span class="n">connect_matching_paths</span><span class="p">(</span><span class="n">fixed_edges</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>            <span class="k">if</span> <span class="n">processed_edges</span><span class="p">:</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>                <span class="k">break</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>                <span class="sa">f</span><span class="s2">&quot;Attempt </span><span class="si">{</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">pairing_attempts</span><span class="si">}</span><span class="s2"> failed to connect paths&quot;</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a>            <span class="p">)</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a>            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to find a solution after </span><span class="si">{</span><span class="n">pairing_attempts</span><span class="si">}</span><span class="s2"> attempts&quot;</span><span class="p">)</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>        <span class="n">processed_edges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>
+</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>    <span class="c1"># really fixed in connect_matching_paths()</span>
+</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a>    <span class="n">finally_fixed_edges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">processed_edges</span><span class="p">)</span>
+</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>    <span class="k">for</span> <span class="n">cycle</span> <span class="ow">in</span> <span class="n">derived_cycles</span><span class="p">:</span>
+</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cycle</span><span class="p">,</span> <span class="n">cycle</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a>            <span class="n">finally_fixed_edges</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="o">*</span><span class="n">edge</span><span class="p">)</span>
+</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>
+</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>    <span class="c1"># Divide the remaining (unfixed) part of the graph into a noodle graph</span>
+</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>    <span class="n">divided_graph</span> <span class="o">=</span> <span class="n">noodlize</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">processed_edges</span><span class="p">)</span>
+</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>
+</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>    <span class="c1"># Simplify paths ( paths with least crossings )</span>
+</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>    <span class="n">paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">split_into_simple_paths</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">divided_graph</span><span class="p">))</span> <span class="o">+</span> <span class="n">derived_cycles</span>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>    <span class="c1"># arrange the orientations here if you want to balance the polarization</span>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>    <span class="k">if</span> <span class="n">vertex_positions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>        <span class="c1"># Set the target_pol in order to cancel the polarization in the fixed part.</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>        <span class="n">target_pol</span> <span class="o">-=</span> <span class="n">vector_sum</span><span class="p">(</span>
+</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>            <span class="n">finally_fixed_edges</span><span class="p">,</span> <span class="n">vertex_positions</span><span class="p">,</span> <span class="n">is_periodic_boundary</span>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>        <span class="p">)</span>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>        <span class="n">paths</span> <span class="o">=</span> <span class="n">optimize</span><span class="p">(</span>
+</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a>            <span class="n">paths</span><span class="p">,</span>
+</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>            <span class="n">vertex_positions</span><span class="o">=</span><span class="n">vertex_positions</span><span class="p">,</span>
+</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a>            <span class="n">is_periodic_boundary</span><span class="o">=</span><span class="n">is_periodic_boundary</span><span class="p">,</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>            <span class="n">dipole_optimization_cycles</span><span class="o">=</span><span class="n">dipole_optimization_cycles</span><span class="p">,</span>
+</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>            <span class="n">target_pol</span><span class="o">=</span><span class="n">target_pol</span><span class="p">,</span>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>        <span class="p">)</span>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>    <span class="c1"># Combine everything together</span>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>    <span class="n">dg</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">finally_fixed_edges</span><span class="p">)</span>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a>        <span class="n">nx</span><span class="o">.</span><span class="n">add_path</span><span class="p">(</span><span class="n">dg</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
 </span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>
-</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a>    <span class="k">return</span> <span class="n">dg</span>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a>    <span class="c1"># Verify that the graph obeys the ice rules</span>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">dg</span><span class="p">:</span>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a>        <span class="k">if</span> <span class="n">fixed_edges</span><span class="o">.</span><span class="n">has_node</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>            <span class="k">if</span> <span class="n">fixed_edges</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">fixed_edges</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a>                <span class="k">continue</span>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>        <span class="k">assert</span> <span class="p">(</span>
+</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a>            <span class="n">dg</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span>
+</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a>        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">dg</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">dg</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a>        <span class="k">assert</span> <span class="n">dg</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span>
+</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a>
+</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a>    <span class="k">return</span> <span class="n">dg</span>
 </span></pre></div>
 
 
@@ -271,125 +283,131 @@ Install with pip3.</p>
                 <section id="ice_graph">
                             <input id="ice_graph-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-            
+                    <div class="decorator">@accept_aliases(vertexPositions=&#39;vertex_positions&#39;, isPeriodicBoundary=&#39;is_periodic_boundary&#39;, dipoleOptimizationCycles=&#39;dipole_optimization_cycles&#39;, fixedEdges=&#39;fixed_edges&#39;, pairingAttempts=&#39;pairing_attempts&#39;)</div>
+
         <span class="def">def</span>
-        <span class="name">ice_graph</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">g</span><span class="p">:</span> <span class="n">networkx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">Graph</span>,</span><span class="param">	<span class="n">vertexPositions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">isPeriodicBoundary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>,</span><span class="param">	<span class="n">dipoleOptimizationCycles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>,</span><span class="param">	<span class="n">fixedEdges</span><span class="p">:</span> <span class="n">networkx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">networkx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span> <span class="nb">object</span><span class="o">&gt;</span></span><span class="return-annotation">) -> <span class="n">networkx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span>:</span></span>
+        <span class="name">ice_graph</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">g</span><span class="p">:</span> <span class="n">networkx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">Graph</span>,</span><span class="param">	<span class="n">vertex_positions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">is_periodic_boundary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>,</span><span class="param">	<span class="n">dipole_optimization_cycles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>,</span><span class="param">	<span class="n">fixed_edges</span><span class="p">:</span> <span class="n">networkx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">networkx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span> <span class="nb">object</span><span class="o">&gt;</span>,</span><span class="param">	<span class="n">pairing_attempts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span>,</span><span class="param">	<span class="n">target_pol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">])</span></span><span class="return-annotation">) -> <span class="n">Optional</span><span class="p">[</span><span class="n">networkx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">]</span>:</span></span>
 
                 <label class="view-source-button" for="ice_graph-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#ice_graph"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="ice_graph-14"><a href="#ice_graph-14"><span class="linenos"> 14</span></a><span class="k">def</span> <span class="nf">ice_graph</span><span class="p">(</span>
-</span><span id="ice_graph-15"><a href="#ice_graph-15"><span class="linenos"> 15</span></a>    <span class="n">g</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
-</span><span id="ice_graph-16"><a href="#ice_graph-16"><span class="linenos"> 16</span></a>    <span class="n">vertexPositions</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="ice_graph-17"><a href="#ice_graph-17"><span class="linenos"> 17</span></a>    <span class="n">isPeriodicBoundary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="ice_graph-18"><a href="#ice_graph-18"><span class="linenos"> 18</span></a>    <span class="n">dipoleOptimizationCycles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-</span><span id="ice_graph-19"><a href="#ice_graph-19"><span class="linenos"> 19</span></a>    <span class="n">fixedEdges</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(),</span>
-</span><span id="ice_graph-20"><a href="#ice_graph-20"><span class="linenos"> 20</span></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">:</span>
-</span><span id="ice_graph-21"><a href="#ice_graph-21"><span class="linenos"> 21</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Make a digraph that obeys the ice rules.</span>
-</span><span id="ice_graph-22"><a href="#ice_graph-22"><span class="linenos"> 22</span></a>
-</span><span id="ice_graph-23"><a href="#ice_graph-23"><span class="linenos"> 23</span></a><span class="sd">    Args:</span>
-</span><span id="ice_graph-24"><a href="#ice_graph-24"><span class="linenos"> 24</span></a><span class="sd">        g (nx.Graph): An ice-like undirected graph. Node labels in the graph g must be consecutive integers from 0 to N-1, where N is the number of nodes, and the labels correspond to the order in vertexPositions.</span>
-</span><span id="ice_graph-25"><a href="#ice_graph-25"><span class="linenos"> 25</span></a><span class="sd">        vertexPositions (Union[nx.ndarray, None], optional): Positions of the vertices in N x 3 numpy array. Defaults to None.</span>
-</span><span id="ice_graph-26"><a href="#ice_graph-26"><span class="linenos"> 26</span></a><span class="sd">        isPeriodicBoundary (bool, optional): If True, the positions are considered to be in the fractional coordinate system. Defaults to False.</span>
-</span><span id="ice_graph-27"><a href="#ice_graph-27"><span class="linenos"> 27</span></a><span class="sd">        dipoleOptimizationCycles (int, optional): Number of iterations to reduce the net dipole moment. Defaults to 0 (no iteration).</span>
-</span><span id="ice_graph-28"><a href="#ice_graph-28"><span class="linenos"> 28</span></a><span class="sd">        fixed (nx.DiGraph, optional): A digraph made of edges whose directions are fixed. All edges in fixed must also be included in g. Defaults to an empty graph.</span>
-</span><span id="ice_graph-29"><a href="#ice_graph-29"><span class="linenos"> 29</span></a>
-</span><span id="ice_graph-30"><a href="#ice_graph-30"><span class="linenos"> 30</span></a><span class="sd">    Returns:</span>
-</span><span id="ice_graph-31"><a href="#ice_graph-31"><span class="linenos"> 31</span></a><span class="sd">        nx.DiGraph: An ice graph.</span>
-</span><span id="ice_graph-32"><a href="#ice_graph-32"><span class="linenos"> 32</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="ice_graph-33"><a href="#ice_graph-33"><span class="linenos"> 33</span></a>    <span class="n">logger</span> <span class="o">=</span> <span class="n">getLogger</span><span class="p">()</span>
-</span><span id="ice_graph-34"><a href="#ice_graph-34"><span class="linenos"> 34</span></a>
-</span><span id="ice_graph-35"><a href="#ice_graph-35"><span class="linenos"> 35</span></a>    <span class="c1"># derived cycles in extending the fixed edges.</span>
-</span><span id="ice_graph-36"><a href="#ice_graph-36"><span class="linenos"> 36</span></a>    <span class="n">derivedCycles</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span id="ice_graph-37"><a href="#ice_graph-37"><span class="linenos"> 37</span></a>
-</span><span id="ice_graph-38"><a href="#ice_graph-38"><span class="linenos"> 38</span></a>    <span class="k">if</span> <span class="n">fixedEdges</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span id="ice_graph-39"><a href="#ice_graph-39"><span class="linenos"> 39</span></a>        <span class="c1"># コメントが日本語の部分はまだデバッグ中と思え。</span>
-</span><span id="ice_graph-40"><a href="#ice_graph-40"><span class="linenos"> 40</span></a>        <span class="k">if</span> <span class="n">logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">DEBUG</span><span class="p">):</span>
-</span><span id="ice_graph-41"><a href="#ice_graph-41"><span class="linenos"> 41</span></a>            <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">fixedEdges</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
-</span><span id="ice_graph-42"><a href="#ice_graph-42"><span class="linenos"> 42</span></a>                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FIXED EDGE </span><span class="si">{</span><span class="n">edge</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="ice_graph-43"><a href="#ice_graph-43"><span class="linenos"> 43</span></a>
-</span><span id="ice_graph-44"><a href="#ice_graph-44"><span class="linenos"> 44</span></a>        <span class="c1"># balance fixed edges</span>
-</span><span id="ice_graph-45"><a href="#ice_graph-45"><span class="linenos"> 45</span></a>        <span class="n">processedEdges</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="ice_graph-46"><a href="#ice_graph-46"><span class="linenos"> 46</span></a>        <span class="k">while</span> <span class="n">processedEdges</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="ice_graph-47"><a href="#ice_graph-47"><span class="linenos"> 47</span></a>            <span class="c1"># It returns Nones when it fails to balance.</span>
-</span><span id="ice_graph-48"><a href="#ice_graph-48"><span class="linenos"> 48</span></a>            <span class="c1"># The processedEdges also include derivedCycles.</span>
-</span><span id="ice_graph-49"><a href="#ice_graph-49"><span class="linenos"> 49</span></a>            <span class="n">processedEdges</span><span class="p">,</span> <span class="n">derivedCycles</span> <span class="o">=</span> <span class="n">balance</span><span class="p">(</span><span class="n">fixedEdges</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span>
-</span><span id="ice_graph-50"><a href="#ice_graph-50"><span class="linenos"> 50</span></a>    <span class="k">else</span><span class="p">:</span>
-</span><span id="ice_graph-51"><a href="#ice_graph-51"><span class="linenos"> 51</span></a>        <span class="n">processedEdges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
-</span><span id="ice_graph-52"><a href="#ice_graph-52"><span class="linenos"> 52</span></a>
-</span><span id="ice_graph-53"><a href="#ice_graph-53"><span class="linenos"> 53</span></a>    <span class="c1"># really fixed in balance()</span>
-</span><span id="ice_graph-54"><a href="#ice_graph-54"><span class="linenos"> 54</span></a>    <span class="n">finallyFixedEdges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">processedEdges</span><span class="p">)</span>
-</span><span id="ice_graph-55"><a href="#ice_graph-55"><span class="linenos"> 55</span></a>    <span class="k">for</span> <span class="n">cycle</span> <span class="ow">in</span> <span class="n">derivedCycles</span><span class="p">:</span>
-</span><span id="ice_graph-56"><a href="#ice_graph-56"><span class="linenos"> 56</span></a>        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cycle</span><span class="p">,</span> <span class="n">cycle</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
-</span><span id="ice_graph-57"><a href="#ice_graph-57"><span class="linenos"> 57</span></a>            <span class="n">finallyFixedEdges</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="o">*</span><span class="n">edge</span><span class="p">)</span>
-</span><span id="ice_graph-58"><a href="#ice_graph-58"><span class="linenos"> 58</span></a>
-</span><span id="ice_graph-59"><a href="#ice_graph-59"><span class="linenos"> 59</span></a>    <span class="c1"># Divide the remaining (unfixed) part of the graph into a noodle graph</span>
-</span><span id="ice_graph-60"><a href="#ice_graph-60"><span class="linenos"> 60</span></a>    <span class="n">dividedGraph</span> <span class="o">=</span> <span class="n">noodlize</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">processedEdges</span><span class="p">)</span>
-</span><span id="ice_graph-61"><a href="#ice_graph-61"><span class="linenos"> 61</span></a>
-</span><span id="ice_graph-62"><a href="#ice_graph-62"><span class="linenos"> 62</span></a>    <span class="c1"># Simplify paths ( paths with least crossings )</span>
-</span><span id="ice_graph-63"><a href="#ice_graph-63"><span class="linenos"> 63</span></a>    <span class="n">paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">split_into_simple_paths</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">dividedGraph</span><span class="p">))</span> <span class="o">+</span> <span class="n">derivedCycles</span>
-</span><span id="ice_graph-64"><a href="#ice_graph-64"><span class="linenos"> 64</span></a>
-</span><span id="ice_graph-65"><a href="#ice_graph-65"><span class="linenos"> 65</span></a>    <span class="c1"># 欠陥がない氷なら、すべてcycleになっているはず。</span>
-</span><span id="ice_graph-66"><a href="#ice_graph-66"><span class="linenos"> 66</span></a>    <span class="c1"># for path in paths:</span>
-</span><span id="ice_graph-67"><a href="#ice_graph-67"><span class="linenos"> 67</span></a>    <span class="c1">#     assert path[0] == path[-1]</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="ice_graph-19"><a href="#ice_graph-19"><span class="linenos"> 19</span></a><span class="nd">@accept_aliases</span><span class="p">(</span>
+</span><span id="ice_graph-20"><a href="#ice_graph-20"><span class="linenos"> 20</span></a>    <span class="n">vertexPositions</span><span class="o">=</span><span class="s2">&quot;vertex_positions&quot;</span><span class="p">,</span>
+</span><span id="ice_graph-21"><a href="#ice_graph-21"><span class="linenos"> 21</span></a>    <span class="n">isPeriodicBoundary</span><span class="o">=</span><span class="s2">&quot;is_periodic_boundary&quot;</span><span class="p">,</span>
+</span><span id="ice_graph-22"><a href="#ice_graph-22"><span class="linenos"> 22</span></a>    <span class="n">dipoleOptimizationCycles</span><span class="o">=</span><span class="s2">&quot;dipole_optimization_cycles&quot;</span><span class="p">,</span>
+</span><span id="ice_graph-23"><a href="#ice_graph-23"><span class="linenos"> 23</span></a>    <span class="n">fixedEdges</span><span class="o">=</span><span class="s2">&quot;fixed_edges&quot;</span><span class="p">,</span>
+</span><span id="ice_graph-24"><a href="#ice_graph-24"><span class="linenos"> 24</span></a>    <span class="n">pairingAttempts</span><span class="o">=</span><span class="s2">&quot;pairing_attempts&quot;</span><span class="p">,</span>
+</span><span id="ice_graph-25"><a href="#ice_graph-25"><span class="linenos"> 25</span></a><span class="p">)</span>
+</span><span id="ice_graph-26"><a href="#ice_graph-26"><span class="linenos"> 26</span></a><span class="k">def</span><span class="w"> </span><span class="nf">ice_graph</span><span class="p">(</span>
+</span><span id="ice_graph-27"><a href="#ice_graph-27"><span class="linenos"> 27</span></a>    <span class="n">g</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
+</span><span id="ice_graph-28"><a href="#ice_graph-28"><span class="linenos"> 28</span></a>    <span class="n">vertex_positions</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="ice_graph-29"><a href="#ice_graph-29"><span class="linenos"> 29</span></a>    <span class="n">is_periodic_boundary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="ice_graph-30"><a href="#ice_graph-30"><span class="linenos"> 30</span></a>    <span class="n">dipole_optimization_cycles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+</span><span id="ice_graph-31"><a href="#ice_graph-31"><span class="linenos"> 31</span></a>    <span class="n">fixed_edges</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(),</span>
+</span><span id="ice_graph-32"><a href="#ice_graph-32"><span class="linenos"> 32</span></a>    <span class="n">pairing_attempts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+</span><span id="ice_graph-33"><a href="#ice_graph-33"><span class="linenos"> 33</span></a>    <span class="n">target_pol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+</span><span id="ice_graph-34"><a href="#ice_graph-34"><span class="linenos"> 34</span></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">]:</span>
+</span><span id="ice_graph-35"><a href="#ice_graph-35"><span class="linenos"> 35</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Make a digraph that obeys the ice rules.</span>
+</span><span id="ice_graph-36"><a href="#ice_graph-36"><span class="linenos"> 36</span></a>
+</span><span id="ice_graph-37"><a href="#ice_graph-37"><span class="linenos"> 37</span></a><span class="sd">    Args:</span>
+</span><span id="ice_graph-38"><a href="#ice_graph-38"><span class="linenos"> 38</span></a><span class="sd">        g (nx.Graph): An ice-like undirected graph. Node labels must be consecutive integers 0 to N-1, corresponding to the order in vertex_positions when given.</span>
+</span><span id="ice_graph-39"><a href="#ice_graph-39"><span class="linenos"> 39</span></a><span class="sd">        vertex_positions (Union[np.ndarray, None], optional): Positions of the vertices, N x 3 array. Defaults to None. If None, dipole-related options are ignored.</span>
+</span><span id="ice_graph-40"><a href="#ice_graph-40"><span class="linenos"> 40</span></a><span class="sd">        fixed_edges (nx.DiGraph, optional): A digraph of edges whose directions are fixed; all must be in g. Defaults to an empty graph.</span>
+</span><span id="ice_graph-41"><a href="#ice_graph-41"><span class="linenos"> 41</span></a>
+</span><span id="ice_graph-42"><a href="#ice_graph-42"><span class="linenos"> 42</span></a><span class="sd">        Only when vertex_positions is not None (dipole optimization):</span>
+</span><span id="ice_graph-43"><a href="#ice_graph-43"><span class="linenos"> 43</span></a><span class="sd">        is_periodic_boundary (bool, optional): If True, positions are in fractional coordinates. Defaults to False.</span>
+</span><span id="ice_graph-44"><a href="#ice_graph-44"><span class="linenos"> 44</span></a><span class="sd">        dipole_optimization_cycles (int, optional): Number of iterations to reduce the net dipole moment. Defaults to 0 (no optimization).</span>
+</span><span id="ice_graph-45"><a href="#ice_graph-45"><span class="linenos"> 45</span></a><span class="sd">        target_pol (Optional[np.ndarray], optional): Target polarization; subtracted from the net polarization. Used only when dipole_optimization_cycles &gt; 0. Defaults to zeros(3).</span>
+</span><span id="ice_graph-46"><a href="#ice_graph-46"><span class="linenos"> 46</span></a>
+</span><span id="ice_graph-47"><a href="#ice_graph-47"><span class="linenos"> 47</span></a><span class="sd">        Only when fixed_edges is not empty:</span>
+</span><span id="ice_graph-48"><a href="#ice_graph-48"><span class="linenos"> 48</span></a><span class="sd">        pairing_attempts (int, optional): Maximum attempts to pair up the fixed edges. Defaults to 100.</span>
+</span><span id="ice_graph-49"><a href="#ice_graph-49"><span class="linenos"> 49</span></a>
+</span><span id="ice_graph-50"><a href="#ice_graph-50"><span class="linenos"> 50</span></a><span class="sd">    Returns:</span>
+</span><span id="ice_graph-51"><a href="#ice_graph-51"><span class="linenos"> 51</span></a><span class="sd">        Optional[nx.DiGraph]: An ice graph that obeys the ice rules, or None if no solution is found within pairing_attempts.</span>
+</span><span id="ice_graph-52"><a href="#ice_graph-52"><span class="linenos"> 52</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="ice_graph-53"><a href="#ice_graph-53"><span class="linenos"> 53</span></a>    <span class="n">logger</span> <span class="o">=</span> <span class="n">getLogger</span><span class="p">()</span>
+</span><span id="ice_graph-54"><a href="#ice_graph-54"><span class="linenos"> 54</span></a>
+</span><span id="ice_graph-55"><a href="#ice_graph-55"><span class="linenos"> 55</span></a>    <span class="k">if</span> <span class="n">logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">DEBUG</span><span class="p">):</span>
+</span><span id="ice_graph-56"><a href="#ice_graph-56"><span class="linenos"> 56</span></a>        <span class="k">if</span> <span class="n">vertex_positions</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span>
+</span><span id="ice_graph-57"><a href="#ice_graph-57"><span class="linenos"> 57</span></a>            <span class="n">is_periodic_boundary</span> <span class="ow">or</span> <span class="n">dipole_optimization_cycles</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">target_pol</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span id="ice_graph-58"><a href="#ice_graph-58"><span class="linenos"> 58</span></a>        <span class="p">):</span>
+</span><span id="ice_graph-59"><a href="#ice_graph-59"><span class="linenos"> 59</span></a>            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+</span><span id="ice_graph-60"><a href="#ice_graph-60"><span class="linenos"> 60</span></a>                <span class="s2">&quot;vertex_positions is None; is_periodic_boundary, &quot;</span>
+</span><span id="ice_graph-61"><a href="#ice_graph-61"><span class="linenos"> 61</span></a>                <span class="s2">&quot;dipole_optimization_cycles, and target_pol are ignored.&quot;</span>
+</span><span id="ice_graph-62"><a href="#ice_graph-62"><span class="linenos"> 62</span></a>            <span class="p">)</span>
+</span><span id="ice_graph-63"><a href="#ice_graph-63"><span class="linenos"> 63</span></a>        <span class="k">if</span> <span class="n">fixed_edges</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">pairing_attempts</span> <span class="o">!=</span> <span class="mi">100</span><span class="p">:</span>
+</span><span id="ice_graph-64"><a href="#ice_graph-64"><span class="linenos"> 64</span></a>            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;fixed_edges is empty; pairing_attempts is ignored.&quot;</span><span class="p">)</span>
+</span><span id="ice_graph-65"><a href="#ice_graph-65"><span class="linenos"> 65</span></a>
+</span><span id="ice_graph-66"><a href="#ice_graph-66"><span class="linenos"> 66</span></a>    <span class="c1"># derived cycles in extending the fixed edges.</span>
+</span><span id="ice_graph-67"><a href="#ice_graph-67"><span class="linenos"> 67</span></a>    <span class="n">derived_cycles</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
 </span><span id="ice_graph-68"><a href="#ice_graph-68"><span class="linenos"> 68</span></a>
-</span><span id="ice_graph-69"><a href="#ice_graph-69"><span class="linenos"> 69</span></a>    <span class="c1"># arrange the orientations here if you want to balance the polarization</span>
-</span><span id="ice_graph-70"><a href="#ice_graph-70"><span class="linenos"> 70</span></a>    <span class="k">if</span> <span class="n">vertexPositions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="ice_graph-71"><a href="#ice_graph-71"><span class="linenos"> 71</span></a>        <span class="c1"># Set the targetPol in order to cancel the polarization in the fixed part.</span>
-</span><span id="ice_graph-72"><a href="#ice_graph-72"><span class="linenos"> 72</span></a>        <span class="n">targetPol</span> <span class="o">=</span> <span class="o">-</span><span class="n">vector_sum</span><span class="p">(</span><span class="n">finallyFixedEdges</span><span class="p">,</span> <span class="n">vertexPositions</span><span class="p">,</span> <span class="n">isPeriodicBoundary</span><span class="p">)</span>
+</span><span id="ice_graph-69"><a href="#ice_graph-69"><span class="linenos"> 69</span></a>    <span class="k">if</span> <span class="n">fixed_edges</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span id="ice_graph-70"><a href="#ice_graph-70"><span class="linenos"> 70</span></a>        <span class="k">if</span> <span class="n">logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">DEBUG</span><span class="p">):</span>
+</span><span id="ice_graph-71"><a href="#ice_graph-71"><span class="linenos"> 71</span></a>            <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">fixed_edges</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+</span><span id="ice_graph-72"><a href="#ice_graph-72"><span class="linenos"> 72</span></a>                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FIXED EDGE </span><span class="si">{</span><span class="n">edge</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span><span id="ice_graph-73"><a href="#ice_graph-73"><span class="linenos"> 73</span></a>
-</span><span id="ice_graph-74"><a href="#ice_graph-74"><span class="linenos"> 74</span></a>        <span class="n">paths</span> <span class="o">=</span> <span class="n">optimize</span><span class="p">(</span>
-</span><span id="ice_graph-75"><a href="#ice_graph-75"><span class="linenos"> 75</span></a>            <span class="n">paths</span><span class="p">,</span>
-</span><span id="ice_graph-76"><a href="#ice_graph-76"><span class="linenos"> 76</span></a>            <span class="n">vertexPositions</span><span class="p">,</span>
-</span><span id="ice_graph-77"><a href="#ice_graph-77"><span class="linenos"> 77</span></a>            <span class="n">isPeriodicBoundary</span><span class="o">=</span><span class="n">isPeriodicBoundary</span><span class="p">,</span>
-</span><span id="ice_graph-78"><a href="#ice_graph-78"><span class="linenos"> 78</span></a>            <span class="n">dipoleOptimizationCycles</span><span class="o">=</span><span class="n">dipoleOptimizationCycles</span><span class="p">,</span>
-</span><span id="ice_graph-79"><a href="#ice_graph-79"><span class="linenos"> 79</span></a>            <span class="n">targetPol</span><span class="o">=</span><span class="n">targetPol</span><span class="p">,</span>
-</span><span id="ice_graph-80"><a href="#ice_graph-80"><span class="linenos"> 80</span></a>        <span class="p">)</span>
-</span><span id="ice_graph-81"><a href="#ice_graph-81"><span class="linenos"> 81</span></a>
-</span><span id="ice_graph-82"><a href="#ice_graph-82"><span class="linenos"> 82</span></a>    <span class="c1"># 欠陥がない氷なら、すべてcycleになっているはず。</span>
-</span><span id="ice_graph-83"><a href="#ice_graph-83"><span class="linenos"> 83</span></a>    <span class="c1"># for path in paths:</span>
-</span><span id="ice_graph-84"><a href="#ice_graph-84"><span class="linenos"> 84</span></a>    <span class="c1">#     assert path[0] == path[-1]</span>
-</span><span id="ice_graph-85"><a href="#ice_graph-85"><span class="linenos"> 85</span></a>
-</span><span id="ice_graph-86"><a href="#ice_graph-86"><span class="linenos"> 86</span></a>    <span class="c1"># Combine everything together</span>
-</span><span id="ice_graph-87"><a href="#ice_graph-87"><span class="linenos"> 87</span></a>    <span class="n">dg</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">finallyFixedEdges</span><span class="p">)</span>
-</span><span id="ice_graph-88"><a href="#ice_graph-88"><span class="linenos"> 88</span></a>
-</span><span id="ice_graph-89"><a href="#ice_graph-89"><span class="linenos"> 89</span></a>    <span class="c1"># 30--&gt;97--&gt;31という辺はextendedFixedEdgesに含まれるべきではない</span>
-</span><span id="ice_graph-90"><a href="#ice_graph-90"><span class="linenos"> 90</span></a>    <span class="c1"># for edge in extendedFixedEdges.edges():</span>
-</span><span id="ice_graph-91"><a href="#ice_graph-91"><span class="linenos"> 91</span></a>    <span class="c1">#     logger.debug(f&quot;EDGE eFE {edge}&quot;)</span>
-</span><span id="ice_graph-92"><a href="#ice_graph-92"><span class="linenos"> 92</span></a>    <span class="c1"># logger.debug(f&quot;{list(dg.predecessors(97))} --&gt; 97 --&gt; {list(dg.successors(97))}&quot;)</span>
-</span><span id="ice_graph-93"><a href="#ice_graph-93"><span class="linenos"> 93</span></a>    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
-</span><span id="ice_graph-94"><a href="#ice_graph-94"><span class="linenos"> 94</span></a>        <span class="n">nx</span><span class="o">.</span><span class="n">add_path</span><span class="p">(</span><span class="n">dg</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
-</span><span id="ice_graph-95"><a href="#ice_graph-95"><span class="linenos"> 95</span></a>
-</span><span id="ice_graph-96"><a href="#ice_graph-96"><span class="linenos"> 96</span></a>    <span class="c1"># Does the graph really obey the ice rules?</span>
-</span><span id="ice_graph-97"><a href="#ice_graph-97"><span class="linenos"> 97</span></a>    <span class="c1"># if logger.isEnabledFor(DEBUG):</span>
-</span><span id="ice_graph-98"><a href="#ice_graph-98"><span class="linenos"> 98</span></a>    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">dg</span><span class="p">:</span>
-</span><span id="ice_graph-99"><a href="#ice_graph-99"><span class="linenos"> 99</span></a>        <span class="k">if</span> <span class="n">fixedEdges</span><span class="o">.</span><span class="n">has_node</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
-</span><span id="ice_graph-100"><a href="#ice_graph-100"><span class="linenos">100</span></a>            <span class="k">if</span> <span class="n">fixedEdges</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">fixedEdges</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
-</span><span id="ice_graph-101"><a href="#ice_graph-101"><span class="linenos">101</span></a>                <span class="k">continue</span>
-</span><span id="ice_graph-102"><a href="#ice_graph-102"><span class="linenos">102</span></a>        <span class="k">assert</span> <span class="p">(</span>
-</span><span id="ice_graph-103"><a href="#ice_graph-103"><span class="linenos">103</span></a>            <span class="n">dg</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span>
-</span><span id="ice_graph-104"><a href="#ice_graph-104"><span class="linenos">104</span></a>        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">dg</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">dg</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="ice_graph-105"><a href="#ice_graph-105"><span class="linenos">105</span></a>        <span class="k">assert</span> <span class="n">dg</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span>
-</span><span id="ice_graph-106"><a href="#ice_graph-106"><span class="linenos">106</span></a>
-</span><span id="ice_graph-107"><a href="#ice_graph-107"><span class="linenos">107</span></a>    <span class="c1"># bug? まれにこのチェックでひっかかる場合があるようだ。</span>
-</span><span id="ice_graph-108"><a href="#ice_graph-108"><span class="linenos">108</span></a>
-</span><span id="ice_graph-109"><a href="#ice_graph-109"><span class="linenos">109</span></a>    <span class="c1"># # この時点で、pathsを検査しておく。</span>
-</span><span id="ice_graph-110"><a href="#ice_graph-110"><span class="linenos">110</span></a>    <span class="c1"># if logger.isEnabledFor(DEBUG):</span>
-</span><span id="ice_graph-111"><a href="#ice_graph-111"><span class="linenos">111</span></a>    <span class="c1">#     gg = nx.Graph(extendedFixedEdges)</span>
-</span><span id="ice_graph-112"><a href="#ice_graph-112"><span class="linenos">112</span></a>    <span class="c1">#     for path in paths:</span>
-</span><span id="ice_graph-113"><a href="#ice_graph-113"><span class="linenos">113</span></a>    <span class="c1">#         nx.add_path(gg, path)</span>
-</span><span id="ice_graph-114"><a href="#ice_graph-114"><span class="linenos">114</span></a>    <span class="c1">#     logger.debug(f&quot;Size g {g.number_of_nodes()} {g.number_of_edges()}&quot;)</span>
-</span><span id="ice_graph-115"><a href="#ice_graph-115"><span class="linenos">115</span></a>    <span class="c1">#     logger.debug(f&quot;Size gg {gg.number_of_nodes()} {gg.number_of_edges()}&quot;)</span>
-</span><span id="ice_graph-116"><a href="#ice_graph-116"><span class="linenos">116</span></a>    <span class="c1">#     assert g.number_of_edges() == gg.number_of_edges()</span>
-</span><span id="ice_graph-117"><a href="#ice_graph-117"><span class="linenos">117</span></a>    <span class="c1">#     e1 = set([(min(i, j), max(i, j)) for i, j in g.edges()])</span>
-</span><span id="ice_graph-118"><a href="#ice_graph-118"><span class="linenos">118</span></a>    <span class="c1">#     e2 = set([(min(i, j), max(i, j)) for i, j in gg.edges()])</span>
-</span><span id="ice_graph-119"><a href="#ice_graph-119"><span class="linenos">119</span></a>    <span class="c1">#     logger.debug(</span>
-</span><span id="ice_graph-120"><a href="#ice_graph-120"><span class="linenos">120</span></a>    <span class="c1">#         f&quot;{sorted(list(e1 - e2))} edges only in original undirected graph.&quot;</span>
-</span><span id="ice_graph-121"><a href="#ice_graph-121"><span class="linenos">121</span></a>    <span class="c1">#     )</span>
-</span><span id="ice_graph-122"><a href="#ice_graph-122"><span class="linenos">122</span></a>    <span class="c1">#     logger.debug(f&quot;{sorted(list(e2 - e1))} edges only in derived directed graph.&quot;)</span>
+</span><span id="ice_graph-74"><a href="#ice_graph-74"><span class="linenos"> 74</span></a>        <span class="c1"># connect matching paths</span>
+</span><span id="ice_graph-75"><a href="#ice_graph-75"><span class="linenos"> 75</span></a>        <span class="n">processed_edges</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="ice_graph-76"><a href="#ice_graph-76"><span class="linenos"> 76</span></a>        <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pairing_attempts</span><span class="p">):</span>
+</span><span id="ice_graph-77"><a href="#ice_graph-77"><span class="linenos"> 77</span></a>            <span class="c1"># It returns Nones when it fails to connect paths.</span>
+</span><span id="ice_graph-78"><a href="#ice_graph-78"><span class="linenos"> 78</span></a>            <span class="c1"># The processed_edges also include derived_cycles.</span>
+</span><span id="ice_graph-79"><a href="#ice_graph-79"><span class="linenos"> 79</span></a>            <span class="n">processed_edges</span><span class="p">,</span> <span class="n">derived_cycles</span> <span class="o">=</span> <span class="n">connect_matching_paths</span><span class="p">(</span><span class="n">fixed_edges</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span>
+</span><span id="ice_graph-80"><a href="#ice_graph-80"><span class="linenos"> 80</span></a>            <span class="k">if</span> <span class="n">processed_edges</span><span class="p">:</span>
+</span><span id="ice_graph-81"><a href="#ice_graph-81"><span class="linenos"> 81</span></a>                <span class="k">break</span>
+</span><span id="ice_graph-82"><a href="#ice_graph-82"><span class="linenos"> 82</span></a>            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+</span><span id="ice_graph-83"><a href="#ice_graph-83"><span class="linenos"> 83</span></a>                <span class="sa">f</span><span class="s2">&quot;Attempt </span><span class="si">{</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">pairing_attempts</span><span class="si">}</span><span class="s2"> failed to connect paths&quot;</span>
+</span><span id="ice_graph-84"><a href="#ice_graph-84"><span class="linenos"> 84</span></a>            <span class="p">)</span>
+</span><span id="ice_graph-85"><a href="#ice_graph-85"><span class="linenos"> 85</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="ice_graph-86"><a href="#ice_graph-86"><span class="linenos"> 86</span></a>            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to find a solution after </span><span class="si">{</span><span class="n">pairing_attempts</span><span class="si">}</span><span class="s2"> attempts&quot;</span><span class="p">)</span>
+</span><span id="ice_graph-87"><a href="#ice_graph-87"><span class="linenos"> 87</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="ice_graph-88"><a href="#ice_graph-88"><span class="linenos"> 88</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="ice_graph-89"><a href="#ice_graph-89"><span class="linenos"> 89</span></a>        <span class="n">processed_edges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+</span><span id="ice_graph-90"><a href="#ice_graph-90"><span class="linenos"> 90</span></a>
+</span><span id="ice_graph-91"><a href="#ice_graph-91"><span class="linenos"> 91</span></a>    <span class="c1"># really fixed in connect_matching_paths()</span>
+</span><span id="ice_graph-92"><a href="#ice_graph-92"><span class="linenos"> 92</span></a>    <span class="n">finally_fixed_edges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">processed_edges</span><span class="p">)</span>
+</span><span id="ice_graph-93"><a href="#ice_graph-93"><span class="linenos"> 93</span></a>    <span class="k">for</span> <span class="n">cycle</span> <span class="ow">in</span> <span class="n">derived_cycles</span><span class="p">:</span>
+</span><span id="ice_graph-94"><a href="#ice_graph-94"><span class="linenos"> 94</span></a>        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cycle</span><span class="p">,</span> <span class="n">cycle</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+</span><span id="ice_graph-95"><a href="#ice_graph-95"><span class="linenos"> 95</span></a>            <span class="n">finally_fixed_edges</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="o">*</span><span class="n">edge</span><span class="p">)</span>
+</span><span id="ice_graph-96"><a href="#ice_graph-96"><span class="linenos"> 96</span></a>
+</span><span id="ice_graph-97"><a href="#ice_graph-97"><span class="linenos"> 97</span></a>    <span class="c1"># Divide the remaining (unfixed) part of the graph into a noodle graph</span>
+</span><span id="ice_graph-98"><a href="#ice_graph-98"><span class="linenos"> 98</span></a>    <span class="n">divided_graph</span> <span class="o">=</span> <span class="n">noodlize</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">processed_edges</span><span class="p">)</span>
+</span><span id="ice_graph-99"><a href="#ice_graph-99"><span class="linenos"> 99</span></a>
+</span><span id="ice_graph-100"><a href="#ice_graph-100"><span class="linenos">100</span></a>    <span class="c1"># Simplify paths ( paths with least crossings )</span>
+</span><span id="ice_graph-101"><a href="#ice_graph-101"><span class="linenos">101</span></a>    <span class="n">paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">split_into_simple_paths</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">divided_graph</span><span class="p">))</span> <span class="o">+</span> <span class="n">derived_cycles</span>
+</span><span id="ice_graph-102"><a href="#ice_graph-102"><span class="linenos">102</span></a>
+</span><span id="ice_graph-103"><a href="#ice_graph-103"><span class="linenos">103</span></a>    <span class="c1"># arrange the orientations here if you want to balance the polarization</span>
+</span><span id="ice_graph-104"><a href="#ice_graph-104"><span class="linenos">104</span></a>    <span class="k">if</span> <span class="n">vertex_positions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="ice_graph-105"><a href="#ice_graph-105"><span class="linenos">105</span></a>        <span class="c1"># Set the target_pol in order to cancel the polarization in the fixed part.</span>
+</span><span id="ice_graph-106"><a href="#ice_graph-106"><span class="linenos">106</span></a>        <span class="n">target_pol</span> <span class="o">-=</span> <span class="n">vector_sum</span><span class="p">(</span>
+</span><span id="ice_graph-107"><a href="#ice_graph-107"><span class="linenos">107</span></a>            <span class="n">finally_fixed_edges</span><span class="p">,</span> <span class="n">vertex_positions</span><span class="p">,</span> <span class="n">is_periodic_boundary</span>
+</span><span id="ice_graph-108"><a href="#ice_graph-108"><span class="linenos">108</span></a>        <span class="p">)</span>
+</span><span id="ice_graph-109"><a href="#ice_graph-109"><span class="linenos">109</span></a>
+</span><span id="ice_graph-110"><a href="#ice_graph-110"><span class="linenos">110</span></a>        <span class="n">paths</span> <span class="o">=</span> <span class="n">optimize</span><span class="p">(</span>
+</span><span id="ice_graph-111"><a href="#ice_graph-111"><span class="linenos">111</span></a>            <span class="n">paths</span><span class="p">,</span>
+</span><span id="ice_graph-112"><a href="#ice_graph-112"><span class="linenos">112</span></a>            <span class="n">vertex_positions</span><span class="o">=</span><span class="n">vertex_positions</span><span class="p">,</span>
+</span><span id="ice_graph-113"><a href="#ice_graph-113"><span class="linenos">113</span></a>            <span class="n">is_periodic_boundary</span><span class="o">=</span><span class="n">is_periodic_boundary</span><span class="p">,</span>
+</span><span id="ice_graph-114"><a href="#ice_graph-114"><span class="linenos">114</span></a>            <span class="n">dipole_optimization_cycles</span><span class="o">=</span><span class="n">dipole_optimization_cycles</span><span class="p">,</span>
+</span><span id="ice_graph-115"><a href="#ice_graph-115"><span class="linenos">115</span></a>            <span class="n">target_pol</span><span class="o">=</span><span class="n">target_pol</span><span class="p">,</span>
+</span><span id="ice_graph-116"><a href="#ice_graph-116"><span class="linenos">116</span></a>        <span class="p">)</span>
+</span><span id="ice_graph-117"><a href="#ice_graph-117"><span class="linenos">117</span></a>
+</span><span id="ice_graph-118"><a href="#ice_graph-118"><span class="linenos">118</span></a>    <span class="c1"># Combine everything together</span>
+</span><span id="ice_graph-119"><a href="#ice_graph-119"><span class="linenos">119</span></a>    <span class="n">dg</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">finally_fixed_edges</span><span class="p">)</span>
+</span><span id="ice_graph-120"><a href="#ice_graph-120"><span class="linenos">120</span></a>
+</span><span id="ice_graph-121"><a href="#ice_graph-121"><span class="linenos">121</span></a>    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+</span><span id="ice_graph-122"><a href="#ice_graph-122"><span class="linenos">122</span></a>        <span class="n">nx</span><span class="o">.</span><span class="n">add_path</span><span class="p">(</span><span class="n">dg</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
 </span><span id="ice_graph-123"><a href="#ice_graph-123"><span class="linenos">123</span></a>
-</span><span id="ice_graph-124"><a href="#ice_graph-124"><span class="linenos">124</span></a>    <span class="k">return</span> <span class="n">dg</span>
+</span><span id="ice_graph-124"><a href="#ice_graph-124"><span class="linenos">124</span></a>    <span class="c1"># Verify that the graph obeys the ice rules</span>
+</span><span id="ice_graph-125"><a href="#ice_graph-125"><span class="linenos">125</span></a>    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">dg</span><span class="p">:</span>
+</span><span id="ice_graph-126"><a href="#ice_graph-126"><span class="linenos">126</span></a>        <span class="k">if</span> <span class="n">fixed_edges</span><span class="o">.</span><span class="n">has_node</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+</span><span id="ice_graph-127"><a href="#ice_graph-127"><span class="linenos">127</span></a>            <span class="k">if</span> <span class="n">fixed_edges</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">fixed_edges</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+</span><span id="ice_graph-128"><a href="#ice_graph-128"><span class="linenos">128</span></a>                <span class="k">continue</span>
+</span><span id="ice_graph-129"><a href="#ice_graph-129"><span class="linenos">129</span></a>        <span class="k">assert</span> <span class="p">(</span>
+</span><span id="ice_graph-130"><a href="#ice_graph-130"><span class="linenos">130</span></a>            <span class="n">dg</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span>
+</span><span id="ice_graph-131"><a href="#ice_graph-131"><span class="linenos">131</span></a>        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">dg</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">dg</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="ice_graph-132"><a href="#ice_graph-132"><span class="linenos">132</span></a>        <span class="k">assert</span> <span class="n">dg</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span>
+</span><span id="ice_graph-133"><a href="#ice_graph-133"><span class="linenos">133</span></a>
+</span><span id="ice_graph-134"><a href="#ice_graph-134"><span class="linenos">134</span></a>    <span class="k">return</span> <span class="n">dg</span>
 </span></pre></div>
 
 
@@ -398,17 +416,21 @@ Install with pip3.</p>
 <h6 id="arguments">Arguments:</h6>
 
 <ul>
-<li><strong>g (nx.Graph):</strong>  An ice-like undirected graph. Node labels in the graph g must be consecutive integers from 0 to N-1, where N is the number of nodes, and the labels correspond to the order in vertexPositions.</li>
-<li><strong>vertexPositions (Union[nx.ndarray, None], optional):</strong>  Positions of the vertices in N x 3 numpy array. Defaults to None.</li>
-<li><strong>isPeriodicBoundary (bool, optional):</strong>  If True, the positions are considered to be in the fractional coordinate system. Defaults to False.</li>
-<li><strong>dipoleOptimizationCycles (int, optional):</strong>  Number of iterations to reduce the net dipole moment. Defaults to 0 (no iteration).</li>
-<li><strong>fixed (nx.DiGraph, optional):</strong>  A digraph made of edges whose directions are fixed. All edges in fixed must also be included in g. Defaults to an empty graph.</li>
+<li><strong>g (nx.Graph):</strong>  An ice-like undirected graph. Node labels must be consecutive integers 0 to N-1, corresponding to the order in vertex_positions when given.</li>
+<li><strong>vertex_positions (Union[np.ndarray, None], optional):</strong>  Positions of the vertices, N x 3 array. Defaults to None. If None, dipole-related options are ignored.</li>
+<li><strong>fixed_edges (nx.DiGraph, optional):</strong>  A digraph of edges whose directions are fixed; all must be in g. Defaults to an empty graph.</li>
+<li><strong>Only when vertex_positions is not None (dipole optimization):</strong> </li>
+<li><strong>is_periodic_boundary (bool, optional):</strong>  If True, positions are in fractional coordinates. Defaults to False.</li>
+<li><strong>dipole_optimization_cycles (int, optional):</strong>  Number of iterations to reduce the net dipole moment. Defaults to 0 (no optimization).</li>
+<li><strong>target_pol (Optional[np.ndarray], optional):</strong>  Target polarization; subtracted from the net polarization. Used only when dipole_optimization_cycles &gt; 0. Defaults to zeros(3).</li>
+<li><strong>Only when fixed_edges is not empty:</strong> </li>
+<li><strong>pairing_attempts (int, optional):</strong>  Maximum attempts to pair up the fixed edges. Defaults to 100.</li>
 </ul>
 
 <h6 id="returns">Returns:</h6>
 
 <blockquote>
-  <p>nx.DiGraph: An ice graph.</p>
+  <p>Optional[nx.DiGraph]: An ice graph that obeys the ice rules, or None if no solution is found within pairing_attempts.</p>
 </blockquote>
 </div>
 
