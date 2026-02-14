@@ -3,21 +3,22 @@ Optimizes the orientations of directed paths to reduce the net dipole moment.
 """
 
 from logging import getLogger, DEBUG
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import numpy as np
-import networkx as nx
 
 from genice_core.compat import accept_aliases
 
 
 def vector_sum(
-    dg: nx.DiGraph, vertex_positions: np.ndarray, is_periodic_boundary: bool = False
+    directed_edges: List[Tuple[int, int]],
+    vertex_positions: np.ndarray,
+    is_periodic_boundary: bool = False,
 ) -> np.ndarray:
-    """Calculate the net polarization (vector sum) of a digraph.
+    """Calculate the net polarization (vector sum) of directed edges.
 
     Args:
-        dg (nx.DiGraph): The digraph.
+        directed_edges: List of (tail, head) pairs.
         vertex_positions (np.ndarray): Positions of the vertices.
         is_periodic_boundary (bool, optional): If true, the vertex positions must be in fractional coordinate. Defaults to False.
 
@@ -25,7 +26,7 @@ def vector_sum(
         np.ndarray: Net polarization vector.
     """
     pol = np.zeros_like(vertex_positions[0])
-    for i, j in dg.edges():
+    for i, j in directed_edges:
         d = vertex_positions[j] - vertex_positions[i]
         if is_periodic_boundary:
             d -= np.floor(d + 0.5)
@@ -111,7 +112,7 @@ def optimize(
     minimal_residual_pol = optimal_parities @ dipoles_arr - target_pol
 
     if logger.isEnabledFor(DEBUG):
-        logger.debug(f"initial {optimalParities @ dipoles_arr} target {target_pol}")
+        logger.debug(f"initial {optimal_parities @ dipoles_arr} target {target_pol}")
         logger.debug(f"dipoles {dipoles_arr}")
         for i, parity in zip(polarized_edges, optimal_parities):
             logger.debug(f"{parity}: {paths[i]}")

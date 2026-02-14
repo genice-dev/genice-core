@@ -4,6 +4,12 @@
 
 import numpy as np
 import networkx as nx
+from genice_core.graph_arrays import (
+    graph_to_adj,
+    digraph_to_arrays,
+    arrays_to_directed_edges,
+    edges_to_digraph,
+)
 from genice_core.topology import (
     noodlize,
     split_into_simple_paths,
@@ -11,8 +17,59 @@ from genice_core.topology import (
 )
 from genice_core.dipole import optimize, vector_sum
 from genice_core.compat import accept_aliases
-from typing import Union, List, Optional
+from typing import Union, List, Optional, Tuple
 from logging import getLogger, DEBUG
+
+
+def _finally_fixed_edges(
+    n_orig: int,
+    fixed_out: List[List[int]],
+    fixed_in: List[List[int]],
+    derived_cycles: List[List[int]],
+) -> List[Tuple[int, int]]:
+    """Directed edges that are fixed, excluding those that lie in derived_cycles."""
+    edges = arrays_to_directed_edges(n_orig, fixed_out, fixed_in)
+    cycle_edges = set()
+    for cycle in derived_cycles:
+        for i in range(len(cycle) - 1):
+            cycle_edges.add((cycle[i], cycle[i + 1]))
+    return [(u, v) for u, v in edges if (u, v) not in cycle_edges]
+
+
+def _vertex_positions_array(vertex_positions, n_orig: int) -> np.ndarray:
+    """Convert vertex_positions to (n_orig, dim) array. Handles dict (e.g. from nx.spring_layout)."""
+    if isinstance(vertex_positions, dict):
+        return np.array([vertex_positions[i] for i in range(n_orig)])
+    arr = np.asarray(vertex_positions)
+    if arr.ndim == 1:
+        arr = arr.reshape(-1, 1)
+    return arr
+
+
+def _path_edges(paths: List[List[int]]) -> List[Tuple[int, int]]:
+    """Directed edges from a list of paths (each path gives consecutive (u,v))."""
+    out: List[Tuple[int, int]] = []
+    for path in paths:
+        for i in range(len(path) - 1):
+            out.append((path[i], path[i + 1]))
+    return out
+
+
+def _verify_ice_rules(n: int, edges: List[Tuple[int, int]], fixed_edges: nx.DiGraph) -> None:
+    """Assert each node has in_degree and out_degree <= 2 (skip fixed nodes with degree > 2)."""
+    in_d = [0] * n
+    out_d = [0] * n
+    for u, v in edges:
+        if 0 <= u < n:
+            out_d[u] += 1
+        if 0 <= v < n:
+            in_d[v] += 1
+    for node in range(n):
+        if fixed_edges.has_node(node):
+            if fixed_edges.in_degree(node) > 2 or fixed_edges.out_degree(node) > 2:
+                continue
+        assert in_d[node] <= 2, f"{node} in_degree {in_d[node]}"
+        assert out_d[node] <= 2, f"{node} out_degree {out_d[node]}"
 
 
 @accept_aliases(
@@ -21,6 +78,7 @@ from logging import getLogger, DEBUG
     dipoleOptimizationCycles="dipole_optimization_cycles",
     fixedEdges="fixed_edges",
     pairingAttempts="pairing_attempts",
+    returnEdges="return_edges",
 )
 def ice_graph(
     g: nx.Graph,
@@ -30,24 +88,22 @@ def ice_graph(
     fixed_edges: nx.DiGraph = nx.DiGraph(),
     pairing_attempts: int = 100,
     target_pol: Optional[np.ndarray] = np.zeros(3),
-) -> Optional[nx.DiGraph]:
+    return_edges: bool = False,
+) -> Union[Optional[nx.DiGraph], Optional[List[Tuple[int, int]]]]:
     """Make a digraph that obeys the ice rules.
 
     Args:
-        g (nx.Graph): An ice-like undirected graph. Node labels must be consecutive integers 0 to N-1, corresponding to the order in vertex_positions when given.
-        vertex_positions (Union[np.ndarray, None], optional): Positions of the vertices, N x 3 array. Defaults to None. If None, dipole-related options are ignored.
-        fixed_edges (nx.DiGraph, optional): A digraph of edges whose directions are fixed; all must be in g. Defaults to an empty graph.
-
-        Only when vertex_positions is not None (dipole optimization):
-        is_periodic_boundary (bool, optional): If True, positions are in fractional coordinates. Defaults to False.
-        dipole_optimization_cycles (int, optional): Number of iterations to reduce the net dipole moment. Defaults to 0 (no optimization).
-        target_pol (Optional[np.ndarray], optional): Target polarization; subtracted from the net polarization. Used only when dipole_optimization_cycles > 0. Defaults to zeros(3).
-
-        Only when fixed_edges is not empty:
-        pairing_attempts (int, optional): Maximum attempts to pair up the fixed edges. Defaults to 100.
+        g (nx.Graph): An ice-like undirected graph. Node labels must be consecutive integers 0 to N-1.
+        vertex_positions (Union[np.ndarray, None], optional): Positions of the vertices, N x 3 array.
+        fixed_edges (nx.DiGraph, optional): A digraph of edges whose directions are fixed.
+        is_periodic_boundary (bool, optional): If True, positions are in fractional coordinates.
+        dipole_optimization_cycles (int, optional): Number of iterations to reduce the net dipole moment.
+        target_pol (Optional[np.ndarray], optional): Target polarization (dipole optimization).
+        pairing_attempts (int, optional): Maximum attempts to pair up the fixed edges.
+        return_edges (bool, optional): If True, return list of (tail, head) instead of nx.DiGraph.
 
     Returns:
-        Optional[nx.DiGraph]: An ice graph that obeys the ice rules, or None if no solution is found within pairing_attempts.
+        nx.DiGraph, or list of (int, int) if return_edges=True. None if no solution found.
     """
     logger = getLogger()
 
@@ -62,72 +118,44 @@ def ice_graph(
         if fixed_edges.size() == 0 and pairing_attempts != 100:
             logger.debug("fixed_edges is empty; pairing_attempts is ignored.")
 
-    # derived cycles in extending the fixed edges.
+    n_orig, adj = graph_to_adj(g)
+    fixed_out, fixed_in = digraph_to_arrays(fixed_edges, n_orig)
     derived_cycles: List[List[int]] = []
 
-    if fixed_edges.size() > 0:
+    if fixed_edges.number_of_edges() > 0:
         if logger.isEnabledFor(DEBUG):
-            for edge in fixed_edges.edges():
-                logger.debug(f"FIXED EDGE {edge}")
-
-        # connect matching paths
-        processed_edges = None
+            for u, v in fixed_edges.edges():
+                logger.debug(f"FIXED EDGE {u} {v}")
         for attempt in range(pairing_attempts):
-            # It returns Nones when it fails to connect paths.
-            # The processed_edges also include derived_cycles.
-            processed_edges, derived_cycles = connect_matching_paths(fixed_edges, g)
-            if processed_edges:
+            result = connect_matching_paths(n_orig, adj, fixed_out, fixed_in)
+            if result[0] is not None:
+                (fixed_out, fixed_in), derived_cycles = result
                 break
-            logger.info(
-                f"Attempt {attempt + 1}/{pairing_attempts} failed to connect paths"
-            )
+            logger.info(f"Attempt {attempt + 1}/{pairing_attempts} failed to connect paths")
         else:
             logger.error(f"Failed to find a solution after {pairing_attempts} attempts")
             return None
-    else:
-        processed_edges = nx.DiGraph()
 
-    # really fixed in connect_matching_paths()
-    finally_fixed_edges = nx.DiGraph(processed_edges)
-    for cycle in derived_cycles:
-        for edge in zip(cycle, cycle[1:]):
-            finally_fixed_edges.remove_edge(*edge)
+    finally_fixed = _finally_fixed_edges(n_orig, fixed_out, fixed_in, derived_cycles)
+    n_nodes, adj_noodles = noodlize(n_orig, adj, fixed_out, fixed_in)
+    paths = split_into_simple_paths(n_orig, n_nodes, adj_noodles) + derived_cycles
 
-    # Divide the remaining (unfixed) part of the graph into a noodle graph
-    divided_graph = noodlize(g, processed_edges)
-
-    # Simplify paths ( paths with least crossings )
-    paths = list(split_into_simple_paths(len(g), divided_graph)) + derived_cycles
-
-    # arrange the orientations here if you want to balance the polarization
     if vertex_positions is not None:
-        # Set the target_pol in order to cancel the polarization in the fixed part.
-        target_pol -= vector_sum(
-            finally_fixed_edges, vertex_positions, is_periodic_boundary
-        )
-
+        pos_arr = _vertex_positions_array(vertex_positions, n_orig)
+        dim = pos_arr.shape[1]
+        target_pol = np.resize(np.asarray(target_pol, dtype=float).flatten(), dim).copy()
+        target_pol -= vector_sum(finally_fixed, pos_arr, is_periodic_boundary)
         paths = optimize(
             paths,
-            vertex_positions=vertex_positions,
+            vertex_positions=pos_arr,
             is_periodic_boundary=is_periodic_boundary,
             dipole_optimization_cycles=dipole_optimization_cycles,
             target_pol=target_pol,
         )
 
-    # Combine everything together
-    dg = nx.DiGraph(finally_fixed_edges)
+    all_edges = finally_fixed + _path_edges(paths)
+    _verify_ice_rules(n_orig, all_edges, fixed_edges)
 
-    for path in paths:
-        nx.add_path(dg, path)
-
-    # Verify that the graph obeys the ice rules
-    for node in dg:
-        if fixed_edges.has_node(node):
-            if fixed_edges.in_degree(node) > 2 or fixed_edges.out_degree(node) > 2:
-                continue
-        assert (
-            dg.in_degree(node) <= 2
-        ), f"{node} {list(dg.successors(node))} {list(dg.predecessors(node))}"
-        assert dg.out_degree(node) <= 2
-
-    return dg
+    if return_edges:
+        return all_edges
+    return edges_to_digraph(n_orig, all_edges)

@@ -1,433 +1,307 @@
 """
-Arrange edges appropriately.
+Arrange edges appropriately. Internal representation uses plain arrays (no NetworkX).
 """
 
 from logging import getLogger, DEBUG
-import networkx as nx
 import numpy as np
-from typing import Union, List, Tuple, Optional, Set
+from typing import List, Tuple, Optional, Set
+
+from genice_core.graph_arrays import (
+    node_to_idx,
+    idx_to_node,
+    connected_components,
+)
 
 
-def _trace_path(g: nx.Graph, path: List[int]) -> List[int]:
-    """Trace the path in a linear or cyclic graph.
-
-    Args:
-        g (nx.Graph): A linear or a simple cyclic graph.
-        path (List[int]): A given path to be extended.
-
-    Returns:
-        List[int]: The extended path or cycle.
-    """
+def _trace_path(
+    n_nodes: int,
+    adj: List[List[int]],
+    path: List[int],
+    vertex_set: Optional[Set[int]] = None,
+) -> List[int]:
+    """Trace the path in a linear or cyclic graph."""
+    vs = vertex_set or set(range(n_nodes))
     while True:
-        # look at the head of the path
-        last, head = path[-2:]
-        for next_node in g[head]:
-            if next_node != last:
-                # go ahead
+        last, head = path[-2], path[-1]
+        next_node = None
+        for w in adj[head]:
+            if w in vs and w != last:
+                next_node = w
                 break
-        else:
-            # no next node
+        if next_node is None:
             return path
         path.append(next_node)
         if next_node == path[0]:
-            # is cyclic
             return path
 
 
-def _find_path(g: nx.Graph) -> List[int]:
-    """Find a path in a linear or cyclic graph.
-
-    Args:
-        g (nx.Graph): A linear or a simple cyclic graph.
-
-    Returns:
-        List[int]: The path or cycle.
-    """
-    nodes = list(g.nodes())
-    # choose one node
-    head = nodes[0]
-    # look neighbors
-    neighbors = list(g[head])
-    if len(neighbors) == 0:
-        # isolated node
+def _find_path(
+    n_nodes: int,
+    adj: List[List[int]],
+    vertex_set: List[int],
+) -> List[int]:
+    """Find a path in a linear or cyclic graph. vertex_set is the connected component."""
+    vs = set(vertex_set)
+    if not vs:
         return []
-    elif len(neighbors) == 1:
-        # head is an end node, fortunately.
-        return _trace_path(g, [head, neighbors[0]])
-    # look forward
-    c0 = _trace_path(g, [head, neighbors[0]])
-
+    head = vertex_set[0]
+    neighbors = [w for w in adj[head] if w in vs]
+    if len(neighbors) == 0:
+        return []
+    if len(neighbors) == 1:
+        return _trace_path(n_nodes, adj, [head, neighbors[0]], vs)
+    c0 = _trace_path(n_nodes, adj, [head, neighbors[0]], vs)
     if c0[-1] == head:
-        # cyclic graph
         return c0
-
-    # look backward
-    c1 = _trace_path(g, [head, neighbors[1]])
+    c1 = _trace_path(n_nodes, adj, [head, neighbors[1]], vs)
     return c0[::-1] + c1[1:]
 
 
-def _divide(g: nx.Graph, vertex: int, offset: int) -> None:
-    """Divide a vertex into two vertices and redistribute edges.
-
-    Args:
-        g (nx.Graph): The graph to modify.
-        vertex (int): The vertex to divide.
-        offset (int): The offset for the new vertex label.
-    """
-    # fill by Nones if number of neighbors is less than 4
-    nei = (list(g[vertex]) + [None, None, None, None])[:4]
-
-    # two neighbor nodes that are passed away to the new node
-    migrants = set(np.random.choice(nei, 2, replace=False)) - {None}
-
-    # new node label
+def _divide(
+    n_nodes: int,
+    adj: List[List[int]],
+    vertex: int,
+    offset: int,
+) -> None:
+    """Divide a vertex into two vertices and redistribute edges. Modifies adj in place."""
+    nei = (list(adj[vertex]) + [None, None, None, None])[:4]
+    valid = [x for x in nei if x is not None]
+    migrants = set(np.random.choice(valid, 2, replace=False))
     new_vertex = vertex + offset
-
-    # assemble edges
     for migrant in migrants:
-        g.remove_edge(migrant, vertex)
-        g.add_edge(new_vertex, migrant)
+        adj[migrant].remove(vertex)
+        adj[vertex].remove(migrant)
+        adj[new_vertex].append(migrant)
+        adj[migrant].append(new_vertex)
 
 
-def noodlize(g: nx.Graph, fixed: Optional[nx.DiGraph] = None) -> nx.Graph:
-    """Divide each vertex of the graph and make a set of paths.
+def noodlize(
+    n_orig: int,
+    adj: List[List[int]],
+    fixed_out: List[List[int]],
+    fixed_in: List[List[int]],
+) -> Tuple[int, List[List[int]]]:
+    """Divide each vertex and make a set of paths. Returns (n_nodes, adj)."""
+    n_nodes = 2 * n_orig
+    # copy adjacency: original n_orig nodes + space for n_orig new nodes
+    adj_noodles = [list(adj[v]) for v in range(n_orig)] + [[] for _ in range(n_orig)]
 
-    A new algorithm suggested by Prof. Sakuma, Yamagata University.
+    # remove fixed edges from copy (fixed edges are (u,v) for v in fixed_out[u])
+    for u in range(n_orig):
+        iu = node_to_idx(u, n_orig)
+        for v in fixed_out[iu]:
+            if 0 <= v < n_orig and v in adj_noodles[u]:
+                adj_noodles[u].remove(v)
+                adj_noodles[v].remove(u)
 
-    Args:
-        g (nx.Graph): An ice-like undirected graph. All vertices must not be >4-degree.
-        fixed (nx.DiGraph, optional): Specifies the edges whose direction is fixed. Defaults to an empty graph.
-
-    Returns:
-        nx.Graph: A graph made of chains and cycles.
-    """
-    logger = getLogger()
-    
-    if fixed is None:
-        fixed = nx.DiGraph()
-
-    g_fix = nx.Graph(fixed)  # undirected copy
-
-    offset = len(g)
-
-    # divided graph
-    g_noodles = nx.Graph(g)
-    for edge in fixed.edges():
-        g_noodles.remove_edge(*edge)
-
-    for v in g:
-        if g_fix.has_node(v):
-            nfixed = g_fix.degree[v]
-        else:
-            nfixed = 0
+    for v in range(n_orig):
+        nfixed = len(fixed_out[node_to_idx(v, n_orig)]) + len(fixed_in[node_to_idx(v, n_orig)])
         if nfixed == 0:
-            _divide(g_noodles, v, offset)
+            _divide(n_nodes, adj_noodles, v, n_orig)
 
-    return g_noodles
+    return n_nodes, adj_noodles
 
 
 def _decompose_complex_path(path: List[int]) -> List[List[int]]:
-    """Divide a complex path with self-crossings into simple cycles and paths.
-
-    Args:
-        path (List[int]): A complex path.
-
-    Yields:
-        List[int]: A short and simple path/cycle.
-    """
+    """Divide a complex path with self-crossings into simple cycles and paths."""
     logger = getLogger()
     if len(path) == 0:
         return
     logger.debug(f"decomposing {path}...")
-    order = dict()
+    order: dict = {}
     order[path[0]] = 0
     store = [path[0]]
     headp = 1
     while headp < len(path):
         node = path[headp]
-
         if node in order:
-            # it is a cycle!
             size = len(order) - order[node]
             cycle = store[-size:] + [node]
             yield cycle
-
-            # remove them from the order[]
             for v in cycle[1:]:
                 del order[v]
-
-            # truncate the store
             store = store[:-size]
-
         order[node] = len(order)
         store.append(node)
         headp += 1
     if len(store) > 1:
         yield store
-    logger.debug(f"Done decomposition.")
+    logger.debug("Done decomposition.")
 
 
 def split_into_simple_paths(
-    nnode: int,
-    g_noodles: nx.Graph,
+    n_orig: int,
+    n_nodes: int,
+    adj: List[List[int]],
 ) -> List[List[int]]:
-    """Set the orientations to the components.
-
-    Args:
-        nnode (int): Number of nodes in the original graph.
-        g_noodles (nx.Graph): The divided graph.
-
-    Yields:
-        List[int]: A short and simple path/cycle.
-    """
-    for verticeSet in nx.connected_components(g_noodles):
-        # a component of c is either a chain or a cycle.
-        g_noodle = g_noodles.subgraph(verticeSet)
-
-        # Find a simple path in the doubled graph
-        # It must be a simple path or a simple cycle.
-        path = _find_path(g_noodle)
-
-        # Flatten then path. It may make the path self-crossing.
-        flatten = [v % nnode for v in path]
-
-        # Divide a long path into simple paths and cycles.
-        yield from _decompose_complex_path(flatten)
+    """Yield simple paths and cycles from the noodle graph."""
+    components = connected_components(n_nodes, adj)
+    result: List[List[int]] = []
+    for vertice_set in components:
+        path = _find_path(n_nodes, adj, vertice_set)
+        flatten = [v % n_orig for v in path]
+        result.extend(_decompose_complex_path(flatten))
+    return result
 
 
-def _remove_dummy_nodes(g: Union[nx.Graph, nx.DiGraph]) -> None:
-    """Remove dummy nodes from the graph.
+def _remove_dummy_nodes(n_orig: int, out_adj: List[List[int]], in_adj: List[List[int]]) -> None:
+    """Remove dummy nodes -1..-4 from the directed graph (in place)."""
+    for i in range(n_orig, n_orig + 4):
+        out_adj[i].clear()
+        in_adj[i].clear()
+    for v in range(n_orig):
+        out_adj[v] = [w for w in out_adj[v] if 0 <= w < n_orig]
+        in_adj[v] = [u for u in in_adj[v] if 0 <= u < n_orig]
 
-    Args:
-        g (Union[nx.Graph, nx.DiGraph]): The graph to clean.
-    """
-    for i in range(-1, -5, -1):
-        if g.has_node(i):
-            g.remove_node(i)
 
-
-def _choose_free_edge(g: nx.Graph, dg: nx.DiGraph, node: int) -> Optional[int]:
-    """Find an unfixed edge of the node.
-
-    Args:
-        g (nx.Graph): The original graph.
-        dg (nx.DiGraph): The directed graph.
-        node (int): The node to find edges for.
-
-    Returns:
-        Optional[int]: A free edge if found, None otherwise.
-    """
-    # add dummy nodes to make number of edges be four.
-    neis = (list(g[node]) + [-1, -2, -3, -4])[:4]
-    # and select one randomly
+def _choose_free_edge(
+    n_orig: int,
+    adj: List[List[int]],
+    out_adj: List[List[int]],
+    in_adj: List[List[int]],
+    node: int,
+) -> Optional[int]:
+    """Find an unfixed edge of the node."""
+    neis = (list(adj[node]) + [-1, -2, -3, -4])[:4]
     np.random.shuffle(neis)
     for nei in neis:
-        if not (dg.has_edge(node, nei) or dg.has_edge(nei, node)):
+        if nei is None:
+            continue
+        i_node = node_to_idx(node, n_orig)
+        i_nei = node_to_idx(nei, n_orig) if nei >= 0 else n_orig + (-1 - nei)
+        has_out = nei in out_adj[i_node]
+        has_in = node in out_adj[i_nei]
+        if not (has_out or has_in):
             return nei
     return None
 
 
-def _get_perimeters(fixed: nx.DiGraph, g: nx.Graph) -> Tuple[Set[int], Set[int]]:
-    """Identify nodes with unbalanced in/out degrees.
-
-    Args:
-        fixed (nx.DiGraph): The fixed edges graph.
-        g (nx.Graph): The original graph.
-
-    Returns:
-        Tuple[Set[int], Set[int]]: Sets of nodes with more incoming edges (in_peri) and more outgoing edges (out_peri).
-    """
-    in_peri = set()
-    out_peri = set()
-    for node in fixed:
-        # If the node has unfixed edges,
-        if fixed.in_degree(node) + fixed.out_degree(node) < g.degree(node):
-            # if it is not balanced,
-            if fixed.in_degree(node) > fixed.out_degree(node):
-                out_peri.add(node)
-            elif fixed.in_degree(node) < fixed.out_degree(node):
-                in_peri.add(node)
+def _get_perimeters(
+    n_orig: int,
+    adj: List[List[int]],
+    out_adj: List[List[int]],
+    in_adj: List[List[int]],
+) -> Tuple[Set[int], Set[int]]:
+    """Identify nodes with unbalanced in/out degrees."""
+    in_peri: Set[int] = set()
+    out_peri: Set[int] = set()
+    size = n_orig + 4
+    for i in range(size):
+        node = idx_to_node(i, n_orig)
+        deg_g = len(adj[node]) if 0 <= node < n_orig else 0
+        in_d = len(in_adj[i])
+        out_d = len(out_adj[i])
+        if node < 0 or in_d + out_d >= deg_g:
+            continue
+        if in_d > out_d:
+            out_peri.add(node)
+        elif in_d < out_d:
+            in_peri.add(node)
     return in_peri, out_peri
 
 
+def _copy_directed(n_orig: int, out_adj: List[List[int]], in_adj: List[List[int]]) -> Tuple[List[List[int]], List[List[int]]]:
+    size = n_orig + 4
+    return [list(row) for row in out_adj], [list(row) for row in in_adj]
+
+
 def connect_matching_paths(
-    fixed: nx.DiGraph, g: nx.Graph
-) -> Tuple[Optional[nx.DiGraph], List[List[int]]]:
-    """Connect matching paths between two types of edges.
-
-    This function creates a set of paths that connect edges of two different types (A and B).
-    Each path connects one edge of type A with one edge of type B, and no two paths share any edges.
-    The goal is to create a complete set of paths that covers all edges in the graph.
-
-    Args:
-        fixed (nx.DiGraph): Fixed edges.
-        g (nx.Graph): Skeletal graph.
-
-    Returns:
-        Tuple[Optional[nx.DiGraph], List[List[int]]]: A tuple containing:
-            - The extended fixed graph (derived cycles are included)
-            - A list of derived cycles.
-    """
+    n_orig: int,
+    adj: List[List[int]],
+    fixed_out: List[List[int]],
+    fixed_in: List[List[int]],
+) -> Tuple[Optional[Tuple[List[List[int]], List[List[int]]]], List[List[int]]]:
+    """Connect matching paths. Returns ((out_adj, in_adj), derived_cycles) or (None, [])."""
     logger = getLogger()
-    
-    # Make a copy to keep the original graph untouched
-    _fixed = nx.DiGraph(fixed)
-
-    in_peri, out_peri = _get_perimeters(_fixed, g)
-
+    _fixed_out, _fixed_in = _copy_directed(n_orig, fixed_out, fixed_in)
+    in_peri, out_peri = _get_perimeters(n_orig, adj, _fixed_out, _fixed_in)
     logger.debug(f"out_peri {out_peri}")
     logger.debug(f"in_peri {in_peri}")
+    derived_cycles: List[List[int]] = []
 
-    derived_cycles = []
+    def add_edge(u: int, v: int) -> None:
+        iu, iv = node_to_idx(u, n_orig), node_to_idx(v, n_orig)
+        _fixed_out[iu].append(v)
+        _fixed_in[iv].append(u)
 
-    # Process out_peri nodes
+    def in_degree(node: int) -> int:
+        return len(_fixed_in[node_to_idx(node, n_orig)])
+
+    def out_degree(node: int) -> int:
+        return len(_fixed_out[node_to_idx(node, n_orig)])
+
+    # Process out_peri
     while out_peri:
-        node = np.random.choice(list(out_peri))
-        out_peri.remove(node)
-
+        node = int(np.random.choice(list(out_peri)))
+        out_peri.discard(node)
         path = [node]
         while True:
             if node < 0:
-                # Path search completed.
                 logger.debug(f"Dead end at {node}. Path is {path}.")
                 break
             if node in in_peri:
-                # Path search completed.
-                logger.debug(f"Reach at a perimeter node {node}. Path is {path}.")
-                # in_peri and out_peri are now pair-annihilated.
-                in_peri.remove(node)
+                in_peri.discard(node)
                 break
-            if node in out_peri:
-                logger.debug(f"node {node} is on the out_peri...")
-            
-            # if the node can no longer be balanced,
-            if max(_fixed.in_degree(node), _fixed.out_degree(node)) * 2 > 4:
-                # Start over.
-                logger.info(f"Failed to balance. Starting over ...")
+            if out_degree(node) * 2 > 4:
+                logger.info("Failed to balance. Starting over ...")
                 return None, []
-            
-            if g.degree(node) == _fixed.degree(node):
-                # Start over.
+            if len(adj[node]) == out_degree(node) + in_degree(node):
                 logger.info(f"node {node} has no free edge. Starting over ...")
                 return None, []
-            
-            # Find the next node. That may be a decorated one.
-            next_node = _choose_free_edge(g, _fixed, node)
+            next_node = _choose_free_edge(n_orig, adj, _fixed_out, _fixed_in, node)
             if next_node is None:
-                 logger.info(f"node {node} has no free edge (unexpected). Starting over ...")
-                 return None, []
-
-            # fix the edge
-            _fixed.add_edge(node, next_node)
-            
-            # record to the path
+                logger.info(f"node {node} has no free edge (unexpected). Starting over ...")
+                return None, []
+            add_edge(node, next_node)
             if next_node >= 0:
                 path.append(next_node)
-                # if still incoming edges are more than outgoing ones,
-                if _fixed.in_degree(node) > _fixed.out_degree(node):
-                    # It is still a perimeter.
+                if in_degree(node) > out_degree(node):
                     out_peri.add(node)
-            
-            # go ahead
             node = next_node
-
-            # if it is circular
             if node in path[:-1]:
-                try:
-                    loc = path.index(node)
-                    # Separate the cycle from the path and store in derivedCycles.
-                    derived_cycles.append(path[loc:])
-                    # and shorten the path
-                    path = path[: loc + 1]
-                except ValueError:
-                    pass
+                loc = path.index(node)
+                derived_cycles.append(path[loc:])
+                path = path[: loc + 1]
 
-    # Process in_peri nodes
+    # Process in_peri
     while in_peri:
-        node = np.random.choice(list(in_peri))
-        in_peri.remove(node)
-        logger.debug(
-            f"first node {node}, its neighbors {g[node]} {list(_fixed.successors(node))} {list(_fixed.predecessors(node))}"
-        )
-
+        node = int(np.random.choice(list(in_peri)))
+        in_peri.discard(node)
+        logger.debug(f"first node {node}")
         path = [node]
         while True:
             if node < 0:
-                # Path search completed.
-                logger.debug(f"Dead end at {node}. Path is {path} {in_peri}.")
                 break
             if node in out_peri:
-                # Path search completed.
-                logger.debug(f"Reach at a perimeter node {node}. Path is {path}.")
-                # in_peri and out_peri are now pair-annihilated.
-                out_peri.remove(node)
+                out_peri.discard(node)
                 break
-            if node in in_peri:
-                logger.debug(f"node {node} is on the in_peri...")
-            
-            if max(_fixed.in_degree(node), _fixed.out_degree(node)) * 2 > 4:
-                logger.info(f"Failed to balance. Starting over ...")
+            if out_degree(node) * 2 > 4:
+                logger.info("Failed to balance. Starting over ...")
                 return None, []
-            
-            if g.degree(node) == _fixed.degree(node):
-                # Start over.
+            if len(adj[node]) == out_degree(node) + in_degree(node):
                 logger.info(f"node {node} has no free edge. Starting over ...")
                 return None, []
-            
-            next_node = _choose_free_edge(g, _fixed, node)
+            next_node = _choose_free_edge(n_orig, adj, _fixed_out, _fixed_in, node)
             if next_node is None:
-                 logger.info(f"node {node} has no free edge (unexpected). Starting over ...")
-                 return None, []
-
-            # record to the path
+                logger.info(f"node {node} has no free edge (unexpected). Starting over ...")
+                return None, []
             if next_node >= 0:
                 path.append(next_node)
-            
-            # fix the edge
-            _fixed.add_edge(next_node, node)
-            
-            # if still incoming edges are more than outgoing ones,
-            if next_node >= 0:
-                if _fixed.in_degree(node) < _fixed.out_degree(node):
-                    in_peri.add(node)
-                    logger.debug(
-                        f"{node} is added to in_peri {_fixed.in_degree(node)} . {_fixed.out_degree(node)}"
-                    )
-            
-            # go ahead
+            add_edge(next_node, node)
+            if next_node >= 0 and in_degree(node) < out_degree(node):
+                in_peri.add(node)
             node = next_node
-            
-            # if it is circular
             if node in path[:-1]:
-                try:
-                    loc = path.index(node)
-                    derived_cycles.append(path[loc:])
-                    path = path[: loc + 1]
-                except ValueError:
-                    pass
+                loc = path.index(node)
+                derived_cycles.append(path[loc:])
+                path = path[: loc + 1]
 
     if logger.isEnabledFor(DEBUG):
-        logger.debug(f"size of g {g.number_of_edges()}")
-        logger.debug(f"size of fixed {_fixed.number_of_edges()}")
         assert len(in_peri) == 0, f"In-peri remains. {in_peri}"
         assert len(out_peri) == 0, f"Out-peri remains. {out_peri}"
-        logger.debug("re-check perimeters")
+        in_peri_check, out_peri_check = _get_perimeters(n_orig, adj, _fixed_out, _fixed_in)
+        assert len(in_peri_check) == 0
+        assert len(out_peri_check) == 0
 
-        in_peri_check, out_peri_check = _get_perimeters(_fixed, g)
-        
-        assert len(in_peri_check) == 0, f"In-peri remains. {in_peri_check}"
-        assert len(out_peri_check) == 0, f"Out-peri remains. {out_peri_check}"
-
-        # Check if extended graph contains all original fixed edges
-        for edge in fixed.edges():
-            assert _fixed.has_edge(*edge)
-
-    _remove_dummy_nodes(_fixed)
-
-    if logger.isEnabledFor(DEBUG):
-        logger.debug(f"Number of fixed edges is {_fixed.number_of_edges()} / {g.number_of_edges()}")
-        logger.debug(f"Number of free cycles: {len(derived_cycles)}")
-        ne = sum([len(cycle) - 1 for cycle in derived_cycles])
-        logger.debug(f"Number of edges in free cycles: {ne}")
-
-    return _fixed, derived_cycles
+    _remove_dummy_nodes(n_orig, _fixed_out, _fixed_in)
+    return (_fixed_out, _fixed_in), derived_cycles
