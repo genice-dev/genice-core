@@ -3,9 +3,10 @@ Backward compatibility utilities (explicit parameter alias mapping).
 """
 
 import functools
-import warnings
+import logging
 from typing import Callable, TypeVar
 
+logger = logging.getLogger(__name__)
 F = TypeVar("F", bound=Callable)
 
 
@@ -14,7 +15,7 @@ def accept_aliases(**alias_map: str) -> Callable[[F], F]:
 
     Use when renaming parameters: list old_name -> new_name explicitly.
     This allows you to choose any new names, not only snake_case.
-    Emits DeprecationWarning when a deprecated (old) name is used.
+    Logs a warning when a deprecated (old) name is used.
 
     Example:
         @accept_aliases(
@@ -32,10 +33,10 @@ def accept_aliases(**alias_map: str) -> Callable[[F], F]:
             normalized = {}
             for key, value in kwargs.items():
                 if key in alias_map:
-                    warnings.warn(
-                        f"Parameter {key!r} is deprecated; use {alias_map[key]!r} instead.",
-                        category=DeprecationWarning,
-                        stacklevel=2,
+                    logger.warning(
+                        "Parameter %r is deprecated; use %r instead.",
+                        key,
+                        alias_map[key],
                     )
                     normalized[alias_map[key]] = value
                 else:
