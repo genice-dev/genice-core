@@ -95,7 +95,9 @@ def noodlize(
                 adj_noodles[v].remove(u)
 
     for v in range(n_orig):
-        nfixed = len(fixed_out[node_to_idx(v, n_orig)]) + len(fixed_in[node_to_idx(v, n_orig)])
+        nfixed = len(fixed_out[node_to_idx(v, n_orig)]) + len(
+            fixed_in[node_to_idx(v, n_orig)]
+        )
         if nfixed == 0:
             _divide(n_nodes, adj_noodles, v, n_orig)
 
@@ -144,7 +146,9 @@ def split_into_simple_paths(
     return result
 
 
-def _remove_dummy_nodes(n_orig: int, out_adj: List[List[int]], in_adj: List[List[int]]) -> None:
+def _remove_dummy_nodes(
+    n_orig: int, out_adj: List[List[int]], in_adj: List[List[int]]
+) -> None:
     """Remove dummy nodes -1..-4 from the directed graph (in place)."""
     for i in range(n_orig, n_orig + 4):
         out_adj[i].clear()
@@ -160,9 +164,14 @@ def _choose_free_edge(
     out_adj: List[List[int]],
     in_adj: List[List[int]],
     node: int,
+    preferred: Optional[Set[int]] = None,
 ) -> Optional[int]:
-    """Find an unfixed edge of the node."""
+    """Find an unfixed edge of the node. If preferred is set, try those neighbors first (e.g. sinks)."""
     neis = (list(adj[node]) + [-1, -2, -3, -4])[:4]
+    if preferred:
+        pref = [n for n in neis if n >= 0 and n in preferred]
+        rest = [n for n in neis if n not in pref]
+        neis = pref + rest
     np.random.shuffle(neis)
     for nei in neis:
         if nei is None:
@@ -200,7 +209,9 @@ def _get_perimeters(
     return in_peri, out_peri
 
 
-def _copy_directed(n_orig: int, out_adj: List[List[int]], in_adj: List[List[int]]) -> Tuple[List[List[int]], List[List[int]]]:
+def _copy_directed(
+    n_orig: int, out_adj: List[List[int]], in_adj: List[List[int]]
+) -> Tuple[List[List[int]], List[List[int]]]:
     size = n_orig + 4
     return [list(row) for row in out_adj], [list(row) for row in in_adj]
 
@@ -250,7 +261,9 @@ def connect_matching_paths(
                 return None, []
             next_node = _choose_free_edge(n_orig, adj, _fixed_out, _fixed_in, node)
             if next_node is None:
-                logger.info(f"node {node} has no free edge (unexpected). Starting over ...")
+                logger.info(
+                    f"node {node} has no free edge (unexpected). Starting over ..."
+                )
                 return None, []
             add_edge(node, next_node)
             if next_node >= 0:
@@ -283,7 +296,9 @@ def connect_matching_paths(
                 return None, []
             next_node = _choose_free_edge(n_orig, adj, _fixed_out, _fixed_in, node)
             if next_node is None:
-                logger.info(f"node {node} has no free edge (unexpected). Starting over ...")
+                logger.info(
+                    f"node {node} has no free edge (unexpected). Starting over ..."
+                )
                 return None, []
             if next_node >= 0:
                 path.append(next_node)
@@ -299,7 +314,9 @@ def connect_matching_paths(
     if logger.isEnabledFor(DEBUG):
         assert len(in_peri) == 0, f"In-peri remains. {in_peri}"
         assert len(out_peri) == 0, f"Out-peri remains. {out_peri}"
-        in_peri_check, out_peri_check = _get_perimeters(n_orig, adj, _fixed_out, _fixed_in)
+        in_peri_check, out_peri_check = _get_perimeters(
+            n_orig, adj, _fixed_out, _fixed_in
+        )
         assert len(in_peri_check) == 0
         assert len(out_peri_check) == 0
 
@@ -315,7 +332,8 @@ def connect_matching_paths_bfs(
 ) -> Tuple[Optional[Tuple[List[List[int]], List[List[int]]]], List[List[int]]]:
     """Connect matching paths by advancing from all sources/sinks in BFS rounds.
     Reduces dead ends by not letting a single path monopolize edges.
-    Returns ((out_adj, in_adj), derived_cycles) or (None, []). derived_cycles may be []."""
+    Returns ((out_adj, in_adj), derived_cycles) or (None, []). derived_cycles may be [].
+    """
     logger = getLogger()
     _fixed_out, _fixed_in = _copy_directed(n_orig, fixed_out, fixed_in)
     in_peri: Set[int] = set()
@@ -334,6 +352,16 @@ def connect_matching_paths_bfs(
             in_peri.add(node)
     derived_cycles: List[List[int]] = []
 
+    # 次数 1 or 3 でまだ固定辺が 0 のノードを未決定端点とする（シンク候補）
+    undet_peri: Set[int] = set()
+    for v in range(n_orig):
+        if (
+            len(adj[v]) in {1, 3}
+            and len(_fixed_in[node_to_idx(v, n_orig)]) == 0
+            and len(_fixed_out[node_to_idx(v, n_orig)]) == 0
+        ):
+            undet_peri.add(v)
+
     def add_edge(u: int, v: int) -> None:
         iu, iv = node_to_idx(u, n_orig), node_to_idx(v, n_orig)
         _fixed_out[iu].append(v)
@@ -349,6 +377,7 @@ def connect_matching_paths_bfs(
         """One BFS round: each node in out_peri tries to push one step. Returns False on failure."""
         if not out_peri:
             return True
+        preferred = in_peri | undet_peri  # 一歩でシンクに着地する辺を優先
         nodes_list = list(out_peri)
         np.random.shuffle(nodes_list)
         next_out = set()
@@ -363,9 +392,13 @@ def connect_matching_paths_bfs(
             if len(adj[node]) == out_degree(node) + in_degree(node):
                 logger.info(f"node {node} has no free edge (push). Starting over ...")
                 return False
-            next_node = _choose_free_edge(n_orig, adj, _fixed_out, _fixed_in, node)
+            next_node = _choose_free_edge(
+                n_orig, adj, _fixed_out, _fixed_in, node, preferred=preferred
+            )
             if next_node is None:
-                logger.info(f"node {node} has no free edge (push, unexpected). Starting over ...")
+                logger.info(
+                    f"node {node} has no free edge (push, unexpected). Starting over ..."
+                )
                 return False
             add_edge(node, next_node)
             out_peri.discard(node)
@@ -374,6 +407,8 @@ def connect_matching_paths_bfs(
             if next_node >= 0:
                 if next_node in in_peri:
                     in_peri.discard(next_node)
+                if next_node in undet_peri:
+                    undet_peri.discard(next_node)
                 if in_degree(next_node) > out_degree(next_node):
                     next_out.add(next_node)
         out_peri.clear()
@@ -384,6 +419,7 @@ def connect_matching_paths_bfs(
         """One BFS round: each node in in_peri tries to pull one step. Returns False on failure."""
         if not in_peri:
             return True
+        preferred = out_peri | undet_peri  # 一歩でソースに着地する辺を優先
         nodes_list = list(in_peri)
         np.random.shuffle(nodes_list)
         next_in = set()
@@ -398,9 +434,13 @@ def connect_matching_paths_bfs(
             if len(adj[node]) == out_degree(node) + in_degree(node):
                 logger.info(f"node {node} has no free edge (pull). Starting over ...")
                 return False
-            next_node = _choose_free_edge(n_orig, adj, _fixed_out, _fixed_in, node)
+            next_node = _choose_free_edge(
+                n_orig, adj, _fixed_out, _fixed_in, node, preferred=preferred
+            )
             if next_node is None:
-                logger.info(f"node {node} has no free edge (pull, unexpected). Starting over ...")
+                logger.info(
+                    f"node {node} has no free edge (pull, unexpected). Starting over ..."
+                )
                 return False
             add_edge(next_node, node)
             in_peri.discard(node)
@@ -409,13 +449,17 @@ def connect_matching_paths_bfs(
             if next_node >= 0:
                 if next_node in out_peri:
                     out_peri.discard(next_node)
+                if next_node in undet_peri:
+                    undet_peri.discard(next_node)
                 if in_degree(next_node) < out_degree(next_node):
                     next_in.add(next_node)
         in_peri.clear()
         in_peri.update(next_in)
         return True
 
-    max_rounds = (n_orig + 4) * 4  # at most one new edge per node per round, finite edges
+    max_rounds = (
+        n_orig + 4
+    ) * 4  # at most one new edge per node per round, finite edges
     for _ in range(max_rounds):
         if not out_peri and not in_peri:
             break
@@ -428,7 +472,9 @@ def connect_matching_paths_bfs(
         return None, []
 
     if logger.isEnabledFor(DEBUG):
-        in_peri_check, out_peri_check = _get_perimeters(n_orig, adj, _fixed_out, _fixed_in)
+        in_peri_check, out_peri_check = _get_perimeters(
+            n_orig, adj, _fixed_out, _fixed_in
+        )
         assert len(in_peri_check) == 0
         assert len(out_peri_check) == 0
 

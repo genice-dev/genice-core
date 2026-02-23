@@ -89,7 +89,9 @@ def _path_edges(paths: List[List[int]]) -> List[Tuple[int, int]]:
     return out
 
 
-def _verify_ice_rules(n: int, edges: List[Tuple[int, int]], fixed_edges: nx.DiGraph) -> None:
+def _verify_ice_rules(
+    n: int, edges: List[Tuple[int, int]], fixed_edges: nx.DiGraph
+) -> None:
     """Assert each node has in_degree and out_degree <= 2 (skip fixed nodes with degree > 2)."""
     in_d = [0] * n
     out_d = [0] * n
@@ -124,6 +126,10 @@ def ice_graph(
     pairing_attempts: int = 100,
     target_pol: Optional[np.ndarray] = np.zeros(3),
     return_edges: bool = False,
+    connect_engine: Callable[
+        [int, List[List[int]], List[List[int]], List[List[int]]],
+        Tuple[Optional[Tuple[List[List[int]], List[List[int]]]], List[List[int]]],
+    ] = connect_matching_paths_bfs,
     g_format: Optional[Literal["edges", "adjacency"]] = None,
 ) -> Union[Optional[nx.DiGraph], Optional[List[Tuple[int, int]]]]:
     """Make a digraph that obeys the ice rules.
@@ -149,7 +155,9 @@ def ice_graph(
 
     if logger.isEnabledFor(DEBUG):
         if vertex_positions is None and (
-            is_periodic_boundary or dipole_optimization_cycles != 0 or np.any(target_pol != 0)
+            is_periodic_boundary
+            or dipole_optimization_cycles != 0
+            or np.any(target_pol != 0)
         ):
             logger.debug(
                 "vertex_positions is None; is_periodic_boundary, "
@@ -167,11 +175,13 @@ def ice_graph(
             for u, v in fixed_edges.edges():
                 logger.debug(f"FIXED EDGE {u} {v}")
         for attempt in range(pairing_attempts):
-            result = connect_matching_paths_bfs(n_orig, adj, fixed_out, fixed_in)
+            result = connect_engine(n_orig, adj, fixed_out, fixed_in)
             if result[0] is not None:
                 (fixed_out, fixed_in), derived_cycles = result
                 break
-            logger.info(f"Attempt {attempt + 1}/{pairing_attempts} failed to connect paths")
+            logger.info(
+                f"Attempt {attempt + 1}/{pairing_attempts} failed to connect paths"
+            )
         else:
             logger.error(f"Failed to find a solution after {pairing_attempts} attempts")
             return None
@@ -183,7 +193,9 @@ def ice_graph(
     if vertex_positions is not None:
         pos_arr = _vertex_positions_array(vertex_positions, n_orig)
         dim = pos_arr.shape[1]
-        target_pol = np.resize(np.asarray(target_pol, dtype=float).flatten(), dim).copy()
+        target_pol = np.resize(
+            np.asarray(target_pol, dtype=float).flatten(), dim
+        ).copy()
         target_pol -= vector_sum(finally_fixed, pos_arr, is_periodic_boundary)
         paths = optimize(
             paths,
