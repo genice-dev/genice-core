@@ -121,6 +121,21 @@ class TestIceGraphProperties(unittest.TestCase):
             self.assertLessEqual(dg.in_degree(node), 2)
             self.assertLessEqual(dg.out_degree(node), 2)
 
+    def test_ice_graph_accepts_adjacency_list(self):
+        """ice_graph accepts g as adjacency list (list of lists of neighbor indices)."""
+        g_nx = nx.dodecahedral_graph()
+        # Build adjacency list: adj[v] = list of neighbors (symmetric)
+        n = g_nx.number_of_nodes()
+        adj_list = [[] for _ in range(n)]
+        for u, v in g_nx.edges():
+            adj_list[u].append(v)
+            adj_list[v].append(u)
+        dg = ice_graph(adj_list, pairing_attempts=100)
+        self.assertIsNotNone(dg)
+        for node in dg.nodes():
+            self.assertLessEqual(dg.in_degree(node), 2)
+            self.assertLessEqual(dg.out_degree(node), 2)
+
     def test_dipole_optimize_traditional_camel_case_args(self):
         """従来通りの camelCase 引数だけで dipole.optimize が動作することを検証する。"""
         paths = [[0, 1, 2], [2, 3, 0]]

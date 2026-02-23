@@ -14,6 +14,7 @@ from genice_core.topology import (
     noodlize,
     split_into_simple_paths,
     connect_matching_paths,
+    connect_matching_paths_bfs,
 )
 from genice_core.dipole import optimize, vector_sum
 from genice_core.compat import accept_aliases
@@ -166,7 +167,7 @@ def ice_graph(
             for u, v in fixed_edges.edges():
                 logger.debug(f"FIXED EDGE {u} {v}")
         for attempt in range(pairing_attempts):
-            result = connect_matching_paths(n_orig, adj, fixed_out, fixed_in)
+            result = connect_matching_paths_bfs(n_orig, adj, fixed_out, fixed_in)
             if result[0] is not None:
                 (fixed_out, fixed_in), derived_cycles = result
                 break
