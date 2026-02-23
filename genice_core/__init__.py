@@ -15,6 +15,7 @@ from genice_core.topology import (
     split_into_simple_paths,
     connect_matching_paths,
     connect_matching_paths_bfs,
+    connect_matching_paths_BFS1,
 )
 from genice_core.dipole import optimize, vector_sum
 from genice_core.compat import accept_aliases
