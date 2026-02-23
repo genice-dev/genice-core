@@ -2,15 +2,17 @@
 
 # GenIce-core
 
-Core algorithms of GenIce2
+Core algorithms of GenIce2 It provides algorithms to generate directed graphs that satisfy the ice rules (hydrogen-disordered ice) from an undirected graph.
 
-version 1.2.0
+version 1.2.1
 
 ## Requirements
 
-\* python
-\* networkx
-\* numpy
+Python 3.10 or newer is required (see `pyproject.toml`).
+
+- python
+- networkx
+- numpy
 
 
 ## Installation
@@ -67,4 +69,18 @@ M. Matsumoto, T. Yagasaki, and H. Tanaka, “GenIce-core: Efficient algorithm fo
 
 ## How to contribute
 
-GenIce has been available as open source software on GitHub(https://pypi.python.org/pypi/GenIce) since 2015. Feedback, suggestions for improvements and enhancements, bug fixes, etc., are sincerely welcome. Developers and test users are also welcome. If you have any publicly available ice that is not included in GenIce, please let us know.
+GenIce has been available as open source software on [GitHub](https://github.com/genice-dev/genice-core) since 2015. Feedback, suggestions for improvements and enhancements, bug fixes, etc., are sincerely welcome. Developers and test users are also welcome. If you have any publicly available ice that is not included in GenIce, please let us know.
+
+## Development
+
+Install dependencies (including dev and test groups):
+
+    poetry install
+
+Run tests:
+
+    poetry run pytest
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

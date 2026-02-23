@@ -31,6 +31,9 @@
             <h2>API Documentation</h2>
                 <ul class="memberlist">
             <li>
+                    <a class="variable" href="#logger">logger</a>
+            </li>
+            <li>
                     <a class="function" href="#accept_aliases">accept_aliases</a>
             </li>
     </ul>
@@ -61,50 +64,63 @@
 </span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a>
 </span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 </span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">TypeVar</span>
 </span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="n">F</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">Callable</span><span class="p">)</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="n">F</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">Callable</span><span class="p">)</span>
 </span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="k">def</span><span class="w"> </span><span class="nf">accept_aliases</span><span class="p">(</span><span class="o">**</span><span class="n">alias_map</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">F</span><span class="p">],</span> <span class="n">F</span><span class="p">]:</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that maps deprecated keyword argument names to the current names.</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">    Use when renaming parameters: list old_name -&gt; new_name explicitly.</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">    This allows you to choose any new names, not only snake_case.</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="sd">    Emits DeprecationWarning when a deprecated (old) name is used.</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="sd">    Example:</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="sd">        @accept_aliases(</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="sd">            vertexPositions=&quot;positions&quot;,</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="sd">            dipoleOptimizationCycles=&quot;max_cycles&quot;,</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="sd">            isPeriodicBoundary=&quot;pbc&quot;,</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="sd">            targetPol=&quot;target&quot;,</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="sd">        )</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="sd">        def optimize(paths, positions, max_cycles=2000, pbc=False, target=None):</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="sd">            ...</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">F</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">F</span><span class="p">:</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>        <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>        <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>            <span class="n">normalized</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">alias_map</span><span class="p">:</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>                    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>                        <span class="sa">f</span><span class="s2">&quot;Parameter </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2"> is deprecated; use </span><span class="si">{</span><span class="n">alias_map</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">!r}</span><span class="s2"> instead.&quot;</span><span class="p">,</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>                        <span class="n">category</span><span class="o">=</span><span class="ne">DeprecationWarning</span><span class="p">,</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>                        <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>                    <span class="p">)</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>                    <span class="n">normalized</span><span class="p">[</span><span class="n">alias_map</span><span class="p">[</span><span class="n">key</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>                <span class="k">else</span><span class="p">:</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>                    <span class="n">normalized</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">normalized</span><span class="p">)</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>        <span class="k">return</span> <span class="n">wrapper</span>  <span class="c1"># type: ignore[return-value]</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>    <span class="k">return</span> <span class="n">decorator</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="k">def</span><span class="w"> </span><span class="nf">accept_aliases</span><span class="p">(</span><span class="o">**</span><span class="n">alias_map</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">F</span><span class="p">],</span> <span class="n">F</span><span class="p">]:</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that maps deprecated keyword argument names to the current names.</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">    Use when renaming parameters: list old_name -&gt; new_name explicitly.</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="sd">    This allows you to choose any new names, not only snake_case.</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="sd">    Logs a warning when a deprecated (old) name is used.</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="sd">    Example:</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="sd">        @accept_aliases(</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="sd">            vertexPositions=&quot;positions&quot;,</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="sd">            dipoleOptimizationCycles=&quot;max_cycles&quot;,</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="sd">            isPeriodicBoundary=&quot;pbc&quot;,</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="sd">            targetPol=&quot;target&quot;,</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="sd">        )</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="sd">        def optimize(paths, positions, max_cycles=2000, pbc=False, target=None):</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="sd">            ...</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">F</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">F</span><span class="p">:</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>        <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>        <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>            <span class="n">normalized</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">alias_map</span><span class="p">:</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>                        <span class="s2">&quot;Parameter </span><span class="si">%r</span><span class="s2"> is deprecated; use </span><span class="si">%r</span><span class="s2"> instead.&quot;</span><span class="p">,</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>                        <span class="n">key</span><span class="p">,</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>                        <span class="n">alias_map</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>                    <span class="p">)</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>                    <span class="n">normalized</span><span class="p">[</span><span class="n">alias_map</span><span class="p">[</span><span class="n">key</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>                <span class="k">else</span><span class="p">:</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>                    <span class="n">normalized</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">normalized</span><span class="p">)</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>        <span class="k">return</span> <span class="n">wrapper</span>  <span class="c1"># type: ignore[return-value]</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>    <span class="k">return</span> <span class="n">decorator</span>
 </span></pre></div>
 
 
             </section>
+                <section id="logger">
+                    <div class="attr variable">
+            <span class="name">logger</span>        =
+<span class="default_value">&lt;Logger <a href="">genice_core.compat</a> (WARNING)&gt;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#logger"></a>
+    
+    
+
+                </section>
                 <section id="accept_aliases">
                             <input id="accept_aliases-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -116,40 +132,40 @@
 
     </div>
     <a class="headerlink" href="#accept_aliases"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="accept_aliases-13"><a href="#accept_aliases-13"><span class="linenos">13</span></a><span class="k">def</span><span class="w"> </span><span class="nf">accept_aliases</span><span class="p">(</span><span class="o">**</span><span class="n">alias_map</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">F</span><span class="p">],</span> <span class="n">F</span><span class="p">]:</span>
-</span><span id="accept_aliases-14"><a href="#accept_aliases-14"><span class="linenos">14</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that maps deprecated keyword argument names to the current names.</span>
-</span><span id="accept_aliases-15"><a href="#accept_aliases-15"><span class="linenos">15</span></a>
-</span><span id="accept_aliases-16"><a href="#accept_aliases-16"><span class="linenos">16</span></a><span class="sd">    Use when renaming parameters: list old_name -&gt; new_name explicitly.</span>
-</span><span id="accept_aliases-17"><a href="#accept_aliases-17"><span class="linenos">17</span></a><span class="sd">    This allows you to choose any new names, not only snake_case.</span>
-</span><span id="accept_aliases-18"><a href="#accept_aliases-18"><span class="linenos">18</span></a><span class="sd">    Emits DeprecationWarning when a deprecated (old) name is used.</span>
-</span><span id="accept_aliases-19"><a href="#accept_aliases-19"><span class="linenos">19</span></a>
-</span><span id="accept_aliases-20"><a href="#accept_aliases-20"><span class="linenos">20</span></a><span class="sd">    Example:</span>
-</span><span id="accept_aliases-21"><a href="#accept_aliases-21"><span class="linenos">21</span></a><span class="sd">        @accept_aliases(</span>
-</span><span id="accept_aliases-22"><a href="#accept_aliases-22"><span class="linenos">22</span></a><span class="sd">            vertexPositions=&quot;positions&quot;,</span>
-</span><span id="accept_aliases-23"><a href="#accept_aliases-23"><span class="linenos">23</span></a><span class="sd">            dipoleOptimizationCycles=&quot;max_cycles&quot;,</span>
-</span><span id="accept_aliases-24"><a href="#accept_aliases-24"><span class="linenos">24</span></a><span class="sd">            isPeriodicBoundary=&quot;pbc&quot;,</span>
-</span><span id="accept_aliases-25"><a href="#accept_aliases-25"><span class="linenos">25</span></a><span class="sd">            targetPol=&quot;target&quot;,</span>
-</span><span id="accept_aliases-26"><a href="#accept_aliases-26"><span class="linenos">26</span></a><span class="sd">        )</span>
-</span><span id="accept_aliases-27"><a href="#accept_aliases-27"><span class="linenos">27</span></a><span class="sd">        def optimize(paths, positions, max_cycles=2000, pbc=False, target=None):</span>
-</span><span id="accept_aliases-28"><a href="#accept_aliases-28"><span class="linenos">28</span></a><span class="sd">            ...</span>
-</span><span id="accept_aliases-29"><a href="#accept_aliases-29"><span class="linenos">29</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="accept_aliases-30"><a href="#accept_aliases-30"><span class="linenos">30</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">F</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">F</span><span class="p">:</span>
-</span><span id="accept_aliases-31"><a href="#accept_aliases-31"><span class="linenos">31</span></a>        <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
-</span><span id="accept_aliases-32"><a href="#accept_aliases-32"><span class="linenos">32</span></a>        <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span id="accept_aliases-33"><a href="#accept_aliases-33"><span class="linenos">33</span></a>            <span class="n">normalized</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span id="accept_aliases-34"><a href="#accept_aliases-34"><span class="linenos">34</span></a>            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span id="accept_aliases-35"><a href="#accept_aliases-35"><span class="linenos">35</span></a>                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">alias_map</span><span class="p">:</span>
-</span><span id="accept_aliases-36"><a href="#accept_aliases-36"><span class="linenos">36</span></a>                    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-</span><span id="accept_aliases-37"><a href="#accept_aliases-37"><span class="linenos">37</span></a>                        <span class="sa">f</span><span class="s2">&quot;Parameter </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2"> is deprecated; use </span><span class="si">{</span><span class="n">alias_map</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">!r}</span><span class="s2"> instead.&quot;</span><span class="p">,</span>
-</span><span id="accept_aliases-38"><a href="#accept_aliases-38"><span class="linenos">38</span></a>                        <span class="n">category</span><span class="o">=</span><span class="ne">DeprecationWarning</span><span class="p">,</span>
-</span><span id="accept_aliases-39"><a href="#accept_aliases-39"><span class="linenos">39</span></a>                        <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-</span><span id="accept_aliases-40"><a href="#accept_aliases-40"><span class="linenos">40</span></a>                    <span class="p">)</span>
-</span><span id="accept_aliases-41"><a href="#accept_aliases-41"><span class="linenos">41</span></a>                    <span class="n">normalized</span><span class="p">[</span><span class="n">alias_map</span><span class="p">[</span><span class="n">key</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
-</span><span id="accept_aliases-42"><a href="#accept_aliases-42"><span class="linenos">42</span></a>                <span class="k">else</span><span class="p">:</span>
-</span><span id="accept_aliases-43"><a href="#accept_aliases-43"><span class="linenos">43</span></a>                    <span class="n">normalized</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-</span><span id="accept_aliases-44"><a href="#accept_aliases-44"><span class="linenos">44</span></a>            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">normalized</span><span class="p">)</span>
-</span><span id="accept_aliases-45"><a href="#accept_aliases-45"><span class="linenos">45</span></a>        <span class="k">return</span> <span class="n">wrapper</span>  <span class="c1"># type: ignore[return-value]</span>
-</span><span id="accept_aliases-46"><a href="#accept_aliases-46"><span class="linenos">46</span></a>    <span class="k">return</span> <span class="n">decorator</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="accept_aliases-14"><a href="#accept_aliases-14"><span class="linenos">14</span></a><span class="k">def</span><span class="w"> </span><span class="nf">accept_aliases</span><span class="p">(</span><span class="o">**</span><span class="n">alias_map</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">F</span><span class="p">],</span> <span class="n">F</span><span class="p">]:</span>
+</span><span id="accept_aliases-15"><a href="#accept_aliases-15"><span class="linenos">15</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that maps deprecated keyword argument names to the current names.</span>
+</span><span id="accept_aliases-16"><a href="#accept_aliases-16"><span class="linenos">16</span></a>
+</span><span id="accept_aliases-17"><a href="#accept_aliases-17"><span class="linenos">17</span></a><span class="sd">    Use when renaming parameters: list old_name -&gt; new_name explicitly.</span>
+</span><span id="accept_aliases-18"><a href="#accept_aliases-18"><span class="linenos">18</span></a><span class="sd">    This allows you to choose any new names, not only snake_case.</span>
+</span><span id="accept_aliases-19"><a href="#accept_aliases-19"><span class="linenos">19</span></a><span class="sd">    Logs a warning when a deprecated (old) name is used.</span>
+</span><span id="accept_aliases-20"><a href="#accept_aliases-20"><span class="linenos">20</span></a>
+</span><span id="accept_aliases-21"><a href="#accept_aliases-21"><span class="linenos">21</span></a><span class="sd">    Example:</span>
+</span><span id="accept_aliases-22"><a href="#accept_aliases-22"><span class="linenos">22</span></a><span class="sd">        @accept_aliases(</span>
+</span><span id="accept_aliases-23"><a href="#accept_aliases-23"><span class="linenos">23</span></a><span class="sd">            vertexPositions=&quot;positions&quot;,</span>
+</span><span id="accept_aliases-24"><a href="#accept_aliases-24"><span class="linenos">24</span></a><span class="sd">            dipoleOptimizationCycles=&quot;max_cycles&quot;,</span>
+</span><span id="accept_aliases-25"><a href="#accept_aliases-25"><span class="linenos">25</span></a><span class="sd">            isPeriodicBoundary=&quot;pbc&quot;,</span>
+</span><span id="accept_aliases-26"><a href="#accept_aliases-26"><span class="linenos">26</span></a><span class="sd">            targetPol=&quot;target&quot;,</span>
+</span><span id="accept_aliases-27"><a href="#accept_aliases-27"><span class="linenos">27</span></a><span class="sd">        )</span>
+</span><span id="accept_aliases-28"><a href="#accept_aliases-28"><span class="linenos">28</span></a><span class="sd">        def optimize(paths, positions, max_cycles=2000, pbc=False, target=None):</span>
+</span><span id="accept_aliases-29"><a href="#accept_aliases-29"><span class="linenos">29</span></a><span class="sd">            ...</span>
+</span><span id="accept_aliases-30"><a href="#accept_aliases-30"><span class="linenos">30</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="accept_aliases-31"><a href="#accept_aliases-31"><span class="linenos">31</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">F</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">F</span><span class="p">:</span>
+</span><span id="accept_aliases-32"><a href="#accept_aliases-32"><span class="linenos">32</span></a>        <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+</span><span id="accept_aliases-33"><a href="#accept_aliases-33"><span class="linenos">33</span></a>        <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="accept_aliases-34"><a href="#accept_aliases-34"><span class="linenos">34</span></a>            <span class="n">normalized</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="accept_aliases-35"><a href="#accept_aliases-35"><span class="linenos">35</span></a>            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span id="accept_aliases-36"><a href="#accept_aliases-36"><span class="linenos">36</span></a>                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">alias_map</span><span class="p">:</span>
+</span><span id="accept_aliases-37"><a href="#accept_aliases-37"><span class="linenos">37</span></a>                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+</span><span id="accept_aliases-38"><a href="#accept_aliases-38"><span class="linenos">38</span></a>                        <span class="s2">&quot;Parameter </span><span class="si">%r</span><span class="s2"> is deprecated; use </span><span class="si">%r</span><span class="s2"> instead.&quot;</span><span class="p">,</span>
+</span><span id="accept_aliases-39"><a href="#accept_aliases-39"><span class="linenos">39</span></a>                        <span class="n">key</span><span class="p">,</span>
+</span><span id="accept_aliases-40"><a href="#accept_aliases-40"><span class="linenos">40</span></a>                        <span class="n">alias_map</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
+</span><span id="accept_aliases-41"><a href="#accept_aliases-41"><span class="linenos">41</span></a>                    <span class="p">)</span>
+</span><span id="accept_aliases-42"><a href="#accept_aliases-42"><span class="linenos">42</span></a>                    <span class="n">normalized</span><span class="p">[</span><span class="n">alias_map</span><span class="p">[</span><span class="n">key</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+</span><span id="accept_aliases-43"><a href="#accept_aliases-43"><span class="linenos">43</span></a>                <span class="k">else</span><span class="p">:</span>
+</span><span id="accept_aliases-44"><a href="#accept_aliases-44"><span class="linenos">44</span></a>                    <span class="n">normalized</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</span><span id="accept_aliases-45"><a href="#accept_aliases-45"><span class="linenos">45</span></a>            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">normalized</span><span class="p">)</span>
+</span><span id="accept_aliases-46"><a href="#accept_aliases-46"><span class="linenos">46</span></a>        <span class="k">return</span> <span class="n">wrapper</span>  <span class="c1"># type: ignore[return-value]</span>
+</span><span id="accept_aliases-47"><a href="#accept_aliases-47"><span class="linenos">47</span></a>    <span class="k">return</span> <span class="n">decorator</span>
 </span></pre></div>
 
 
@@ -157,7 +173,7 @@
 
 <p>Use when renaming parameters: list old_name -> new_name explicitly.
 This allows you to choose any new names, not only snake_case.
-Emits DeprecationWarning when a deprecated (old) name is used.</p>
+Logs a warning when a deprecated (old) name is used.</p>
 
 <h6 id="example">Example:</h6>
 
