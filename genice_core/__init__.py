@@ -19,7 +19,7 @@ from genice_core.topology import (
 )
 from genice_core.dipole import optimize, vector_sum
 from genice_core.compat import accept_aliases
-from typing import Union, List, Optional, Tuple, Sequence, Literal
+from typing import Callable, Union, List, Optional, Tuple, Sequence, Literal
 from logging import getLogger, DEBUG
 
 
