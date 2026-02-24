@@ -4,7 +4,7 @@
 
 Core algorithms of GenIce2 It provides algorithms to generate directed graphs that satisfy the ice rules (hydrogen-disordered ice) from an undirected graph.
 
-version 1.2.1
+version 1.3.0
 
 ## Requirements
 
