@@ -523,7 +523,11 @@ def _build_free_adj(
     for u in range(n_orig):
         iu = node_to_idx(u, n_orig)
         for v in adj[u]:
-            if 0 <= v < n_orig and v not in out_adj[iu] and u not in out_adj[node_to_idx(v, n_orig)]:
+            if (
+                0 <= v < n_orig
+                and v not in out_adj[iu]
+                and u not in out_adj[node_to_idx(v, n_orig)]
+            ):
                 free_adj[u].append(v)
     return free_adj
 
@@ -563,17 +567,19 @@ def _shortest_path_to_any_target_bfs(
     return path, found
 
 
-def connect_matching_paths_BFS1(
+def connect_matching_paths_SP2ST(
     n_orig: int,
     adj: List[List[int]],
     fixed_out: List[List[int]],
     fixed_in: List[List[int]],
 ) -> Tuple[Optional[Tuple[List[List[int]], List[List[int]]]], List[List[int]]]:
-    """Connect matching paths by shortest-path BFS (one path at a time). Same interface as connect_matching_paths.
+    """Connect matching paths by "Shortest path to a set of targets" (SP2ST). Same interface as connect_matching_paths.
     Good for high doping. Returns ((out_adj, in_adj), derived_cycles) or (None, [])."""
     logger = getLogger()
     _fixed_out, _fixed_in = _copy_directed(n_orig, fixed_out, fixed_in)
-    in_peri, out_peri, undet_peri = _get_perimeters_bfs1(n_orig, adj, _fixed_out, _fixed_in)
+    in_peri, out_peri, undet_peri = _get_perimeters_bfs1(
+        n_orig, adj, _fixed_out, _fixed_in
+    )
     free_adj = _build_free_adj(n_orig, adj, _fixed_out)
     derived_cycles: List[List[int]] = []
 
@@ -607,7 +613,9 @@ def connect_matching_paths_BFS1(
         else:
             undet_peri.discard(end)
 
-    in_peri, out_peri, undet_peri = _get_perimeters_bfs1(n_orig, adj, _fixed_out, _fixed_in)
+    in_peri, out_peri, undet_peri = _get_perimeters_bfs1(
+        n_orig, adj, _fixed_out, _fixed_in
+    )
 
     # in_peri から 1 本ずつ最短経路で out_peri または undet_peri へ（逆向きに追加）
     while in_peri:
