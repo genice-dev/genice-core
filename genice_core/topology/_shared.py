@@ -2,7 +2,7 @@
 
 from typing import List, Tuple, Optional, Set
 
-from genice_core.graph_arrays import (
+from genice_core.topology.graph_arrays import (
     node_to_idx,
     idx_to_node,
     connected_components,

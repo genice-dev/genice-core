@@ -4,16 +4,14 @@
 
 import numpy as np
 import networkx as nx
-from genice_core.graph_arrays import (
+from genice_core.topology.graph_arrays import (
     graph_to_adj,
-    # digraph_to_arrays,
     arrays_to_directed_edges,
-    # edges_to_digraph,
 )
 from genice_core.topology_nx import (
-    noodlize_nx,
-    split_into_simple_paths_nx,
-    connect_matching_paths_nx,
+    noodlize,
+    split_into_simple_paths,
+    connect_matching_paths,
 )
 from genice_core.dipole import optimize, vector_sum
 from genice_core.compat import accept_aliases
@@ -488,7 +486,7 @@ def ice_graph(
     return_edges: bool = False,
     connect_engine: Callable[
         [nx.DiGraph, nx.Graph], Tuple[Optional[nx.DiGraph], List[List[int]]]
-    ] = connect_matching_paths_nx,
+    ] = connect_matching_paths,
     g_format: Optional[Literal["edges", "adjacency"]] = None,
 ) -> Union[Optional[nx.DiGraph], Optional[List[Tuple[int, int]]]]:
     """Make a digraph that obeys the ice rules.
@@ -569,10 +567,10 @@ def ice_graph(
                 finally_fixed_edges.remove_edge(u, v)
 
     # Divide the remaining (unfixed) part of the graph into a noodle graph
-    divided_graph = noodlize_nx(G, processed_edges)
+    divided_graph = noodlize(G, processed_edges)
 
     # Simplify paths ( paths with least crossings )
-    paths = split_into_simple_paths_nx(n_orig, divided_graph) + derived_cycles
+    paths = split_into_simple_paths(n_orig, divided_graph) + derived_cycles
 
     # arrange the orientations here if you want to balance the polarization
     if vertex_positions is not None:

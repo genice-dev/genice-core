@@ -10,9 +10,9 @@ from typing import List, Tuple
 
 # Optional import for conversion; topology/dipole do not import nx
 try:
-    import networkx as nx
-except ImportError:
-    nx = None
+    import networkx as nx  # type: ignore
+except ImportError:  # pragma: no cover - optional dependency
+    nx = None  # type: ignore
 
 
 def node_to_idx(v: int, n: int) -> int:
@@ -37,7 +37,7 @@ def graph_to_adj(g: "nx.Graph") -> Tuple[int, List[List[int]]]:
 
 def adj_to_graph(n: int, adj: List[List[int]]) -> "nx.Graph":
     """Build nx.Graph from (n, adj)."""
-    g = nx.Graph()
+    g = nx.Graph()  # type: ignore[operator]
     g.add_nodes_from(range(n))
     for u in range(n):
         for v in adj[u]:
@@ -73,14 +73,14 @@ def arrays_to_directed_edges(
         if not include_dummy and u < 0:
             continue
         for v in out_adj[i]:
-            if include_dummy or (v >= 0 and v < n_orig):
+            if include_dummy or (0 <= v < n_orig):
                 edges.append((u, v))
     return edges
 
 
 def edges_to_digraph(n: int, edges: List[Tuple[int, int]]) -> "nx.DiGraph":
     """Build nx.DiGraph with nodes 0..n-1 and given directed edges."""
-    dg = nx.DiGraph()
+    dg = nx.DiGraph()  # type: ignore[operator]
     dg.add_nodes_from(range(n))
     for u, v in edges:
         dg.add_edge(u, v)
@@ -109,3 +109,4 @@ def connected_components(n_nodes: int, adj: List[List[int]]) -> List[List[int]]:
         if not seen[v]:
             components.append(bfs(v))
     return components
+

@@ -1,114 +1,10 @@
-"""NetworkX-based topology operations (noodlize, path splitting, matching)."""
+"""Connect matching paths by random path extension (NetworkX backend)."""
 
-import logging
-from logging import getLogger
+from logging import getLogger, DEBUG
 from typing import List, Optional, Set, Tuple
 
 import networkx as nx
 import numpy as np
-
-
-def _trace_path(g: nx.Graph, path: List[int]) -> List[int]:
-    """Trace the path in a linear or cyclic graph."""
-    while True:
-        last, head = path[-2:]
-        for next_node in g[head]:
-            if next_node != last:
-                break
-        else:
-            return path
-        path.append(next_node)
-        if next_node == path[0]:
-            return path
-
-
-def _find_path(g: nx.Graph) -> List[int]:
-    """Find a path in a linear or cyclic graph."""
-    nodes = list(g.nodes())
-    if not nodes:
-        return []
-    head = nodes[0]
-    neighbors = list(g[head])
-    if len(neighbors) == 0:
-        return []
-    if len(neighbors) == 1:
-        return _trace_path(g, [head, neighbors[0]])
-    c0 = _trace_path(g, [head, neighbors[0]])
-    if c0[-1] == head:
-        return c0
-    c1 = _trace_path(g, [head, neighbors[1]])
-    return c0[::-1] + c1[1:]
-
-
-def _divide(g: nx.Graph, vertex: int, offset: int) -> None:
-    """Divide a vertex into two vertices and redistribute edges."""
-    nei = (list(g[vertex]) + [None, None, None, None])[:4]
-    migrants = set(np.random.choice(nei, 2, replace=False)) - {None}
-    new_vertex = vertex + offset
-    for migrant in migrants:
-        g.remove_edge(migrant, vertex)
-        g.add_edge(new_vertex, migrant)
-
-
-def noodlize(g: nx.Graph, fixed: Optional[nx.DiGraph] = None) -> nx.Graph:
-    """Divide each vertex and make a set of paths (NetworkX version)."""
-    logger = getLogger()
-    if fixed is None:
-        fixed = nx.DiGraph()
-    g_fix = nx.Graph(fixed)  # undirected copy
-    offset = len(g)
-    g_noodles = nx.Graph(g)
-    for edge in fixed.edges():
-        g_noodles.remove_edge(*edge)
-    for v in g:
-        if g_fix.has_node(v):
-            nfixed = g_fix.degree[v]
-        else:
-            nfixed = 0
-        if nfixed == 0:
-            _divide(g_noodles, v, offset)
-    logger.debug("noodlize finished.")
-    return g_noodles
-
-
-def _decompose_complex_path(path: List[int]) -> List[List[int]]:
-    """Divide a complex path with self-crossings into simple cycles and paths."""
-    logger = getLogger()
-    if len(path) == 0:
-        return []
-    logger.debug(f"decomposing {path}...")
-    order: dict = {}
-    order[path[0]] = 0
-    store = [path[0]]
-    headp = 1
-    out: List[List[int]] = []
-    while headp < len(path):
-        node = path[headp]
-        if node in order:
-            size = len(order) - order[node]
-            cycle = store[-size:] + [node]
-            out.append(cycle)
-            for v in cycle[1:]:
-                del order[v]
-            store = store[:-size]
-        order[node] = len(order)
-        store.append(node)
-        headp += 1
-    if len(store) > 1:
-        out.append(store)
-    logger.debug("Done decomposition.")
-    return out
-
-
-def split_into_simple_paths(nnode: int, g_noodles: nx.Graph) -> List[List[int]]:
-    """Simplify noodle graph into simple paths/cycles (NetworkX version)."""
-    paths: List[List[int]] = []
-    for vertice_set in nx.connected_components(g_noodles):
-        g_noodle = g_noodles.subgraph(vertice_set)
-        path = _find_path(g_noodle)
-        flatten = [v % nnode for v in path]
-        paths.extend(_decompose_complex_path(flatten))
-    return paths
 
 
 def _remove_dummy_nodes(g: nx.DiGraph) -> None:
@@ -246,7 +142,7 @@ def connect_matching_paths(
                 except ValueError:
                     pass
 
-    if logger.isEnabledFor(logging.DEBUG):
+    if logger.isEnabledFor(DEBUG):
         logger.debug(f"size of g {g.number_of_edges()}")
         logger.debug(f"size of fixed {_fixed.number_of_edges()}")
         assert len(in_peri) == 0, f"In-peri remains. {in_peri}"
