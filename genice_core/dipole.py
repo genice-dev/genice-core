@@ -34,7 +34,7 @@ def vector_sum(
     return pol
 
 
-def _dipole_moment_pbc(path: List[int], vertex_positions: np.ndarray) -> np.ndarray:
+def _path_dipole_moment_pbc(path: List[int], vertex_positions: np.ndarray) -> np.ndarray:
     """Calculate the dipole moment of a path with periodic boundary conditions.
 
     Args:
@@ -90,7 +90,7 @@ def optimize(
     dipoles: List[np.ndarray] = []
     for i, path in enumerate(paths):
         if is_periodic_boundary:
-            chain_pol = _dipole_moment_pbc(path, vertex_positions)
+            chain_pol = _path_dipole_moment_pbc(path, vertex_positions)
             # if it is large enough, i.e. if it is a spanning cycle or a chain
             if chain_pol @ chain_pol > 1e-6:
                 dipoles.append(chain_pol)
