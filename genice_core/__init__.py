@@ -12,6 +12,7 @@ from genice_core.topology_nx import (
     noodlize,
     split_into_simple_paths,
     connect_matching_paths,
+    force_polarize,
 )
 from genice_core.dipole import optimize, vector_sum
 from genice_core.compat import accept_aliases
@@ -484,6 +485,7 @@ def ice_graph(
     pairing_attempts: int = 100,
     target_pol: Optional[np.ndarray] = np.zeros(3),
     return_edges: bool = False,
+    polarize_cycles: int = 0,
     connect_engine: Callable[
         [nx.DiGraph, nx.Graph], Tuple[Optional[nx.DiGraph], List[List[int]]]
     ] = connect_matching_paths,
@@ -596,6 +598,10 @@ def ice_graph(
     dg = nx.DiGraph(finally_fixed_edges)
     for path in paths:
         nx.add_path(dg, path)
+
+
+    dg = force_polarize(dg, fixed_edges, vertex_positions, target_pol, polarize_cycles)
+
 
     all_edges = list(dg.edges())
     _verify_ice_rules(n_orig, all_edges, fixed_edges)

@@ -60,13 +60,14 @@ dg = genice_core.ice_graph(
     dipole_optimization_cycles=depol,
     is_periodic_boundary=True,
     fixed_edges=fixed,
-    target_pol=(20 ,0, 0),
+    target_pol=(40 ,0, 0),
+    polarize_cycles=1000,
 )
 
 edges = [[i, j] for i, j in dg.edges()]
 print(dipole(edges, pos, is_periodic_boundary=True))
 
-dg2 = force_polarize(hbn=dg, user_fixed=fixed, vertex_positions=pos, target_pol=(20 ,0, 0), polarize_cycles=1000)
+# dg2 = force_polarize(hbn=dg, user_fixed=fixed, vertex_positions=pos, target_pol=(20 ,0, 0), polarize_cycles=1000)
 
-edges2 = [[i, j] for i, j in dg2.edges()]
-print(dipole(edges2, pos, is_periodic_boundary=True))
+# edges2 = [[i, j] for i, j in dg2.edges()]
+# print(dipole(edges2, pos, is_periodic_boundary=True))
