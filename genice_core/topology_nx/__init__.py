@@ -108,10 +108,11 @@ def force_polarize(
     for i in range(polarize_cycles):
         delta_pol = polarize(dg, vertex_positions, residents, grid_shape=(Ng, Ng, Ng), target_pol=target_pol - original_pol)
         original_pol += delta_pol
-        logger.debug(f"Polarization: loop {i}: remains {target_pol - original_pol}")
+        remain = target_pol - original_pol
+        logger.debug(f"Polarization: loop {i}: remains {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}")
         if np.allclose(target_pol - original_pol, 0, atol=1e-3):
             break
-    logger.info(f"Polarization: loop {i}: remains {target_pol - original_pol}")
+    logger.info(f"Polarization: loop {i}: remains {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}")
     for edge in user_fixed.edges():
         dg.add_edge(edge[0], edge[1])
     
