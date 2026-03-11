@@ -137,7 +137,7 @@ def optimize(
                 logger.debug("Optimized.")
                 break
 
-    logger.info(f"Depol. loop {loop}: {minimal_residual_pol}")
+    logger.info(f"Polarization 1: loop {loop}: remains {-minimal_residual_pol[0]:.2f}, {-minimal_residual_pol[1]:.2f}, {-minimal_residual_pol[2]:.2f}")
 
     # invert some chains according to parity_optimal
     for i, parity in zip(polarized_edges, optimal_parities):

@@ -81,7 +81,7 @@ def force_polarize(
     user_fixed: nx.DiGraph,
     vertex_positions: np.ndarray,
     target_pol: np.ndarray,
-    polarize_cycles: int = 1000,
+    dipole_optimization_cycles2: int = 1000,
 ):
     # hbnには、genice_coreアルゴリズムで最適化された水素結合がはいっている。
     # そのうち、当初からユーザーにより固定されていた辺はuser_fixedにはいっている。
@@ -105,11 +105,11 @@ def force_polarize(
     for i, pos in enumerate(vertex_positions):
         residents[int(pos[0] * Ng), int(pos[1] * Ng), int(pos[2] * Ng)].add(i)
     
-    for i in range(polarize_cycles):
+    for i in range(dipole_optimization_cycles2):
         delta_pol = polarize(dg, vertex_positions, residents, grid_shape=(Ng, Ng, Ng), target_pol=target_pol - original_pol)
         original_pol += delta_pol
         remain = target_pol - original_pol
-        logger.debug(f"Polarization: loop {i}: remains {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}")
+        logger.debug(f"Polarization 2: loop {i}: remains {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}")
         if np.allclose(target_pol - original_pol, 0, atol=1e-3):
             break
     logger.info(f"Polarization: loop {i}: remains {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}")

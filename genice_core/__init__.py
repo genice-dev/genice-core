@@ -471,6 +471,7 @@ def connect_matching_paths_nx(
     vertexPositions="vertex_positions",
     isPeriodicBoundary="is_periodic_boundary",
     dipoleOptimizationCycles="dipole_optimization_cycles",
+    dipoleOptimizationCycles2="dipole_optimization_cycles2",
     fixedEdges="fixed_edges",
     pairingAttempts="pairing_attempts",
     returnEdges="return_edges",
@@ -485,7 +486,7 @@ def ice_graph(
     pairing_attempts: int = 100,
     target_pol: Optional[np.ndarray] = np.zeros(3),
     return_edges: bool = False,
-    polarize_cycles: int = 0,
+    dipole_optimization_cycles2: int = 0,
     connect_engine: Callable[
         [nx.DiGraph, nx.Graph], Tuple[Optional[nx.DiGraph], List[List[int]]]
     ] = connect_matching_paths,
@@ -501,6 +502,7 @@ def ice_graph(
         fixed_edges (nx.DiGraph, optional): A digraph of edges whose directions are fixed.
         is_periodic_boundary (bool, optional): If True, positions are in fractional coordinates.
         dipole_optimization_cycles (int, optional): Number of iterations to reduce the net dipole moment.
+        dipole_optimization_cycles2 (int, optional): Number of cycles for force_polarize (target_pol-directed flip).
         target_pol (Optional[np.ndarray], optional): Target polarization (dipole optimization).
         pairing_attempts (int, optional): Maximum attempts to pair up the fixed edges.
         return_edges (bool, optional): If True, return directed edge list instead of nx.DiGraph.
@@ -600,7 +602,7 @@ def ice_graph(
         nx.add_path(dg, path)
 
 
-    dg = force_polarize(dg, fixed_edges, vertex_positions, target_pol, polarize_cycles)
+    dg = force_polarize(dg, fixed_edges, vertex_positions, target_pol, dipole_optimization_cycles2)
 
 
     all_edges = list(dg.edges())
