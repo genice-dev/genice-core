@@ -86,11 +86,10 @@ def force_polarize(
     # hbnには、genice_coreアルゴリズムで最適化された水素結合がはいっている。
     # そのうち、当初からユーザーにより固定されていた辺はuser_fixedにはいっている。
     # 残る部分を再配置することで、分極をできるだけtarget_polに近付ける。
-    # 手法としては、まず、dgからuser_fixedを除去したグラフを作る。
-    # それについて、繰り返し、polarize関数を呼んでtarget_polに近付ける.
+    if dipole_optimization_cycles2 <= 0:
+        return nx.DiGraph(hbn)
 
     logger = getLogger()
-    
     dg = nx.DiGraph(hbn)
     for edge in hbn.edges():
         if user_fixed.has_edge(edge[0], edge[1]):
@@ -102,18 +101,20 @@ def force_polarize(
     Ng = int((N / 5)**(1/3))
     
     residents = defaultdict(set)
-    for i, pos in enumerate(vertex_positions):
-        residents[int(pos[0] * Ng), int(pos[1] * Ng), int(pos[2] * Ng)].add(i)
+    for idx, pos in enumerate(vertex_positions):
+        residents[int(pos[0] * Ng), int(pos[1] * Ng), int(pos[2] * Ng)].add(idx)
     
+    last_loop = -1
     for i in range(dipole_optimization_cycles2):
         delta_pol = polarize(dg, vertex_positions, residents, grid_shape=(Ng, Ng, Ng), target_pol=target_pol - original_pol)
         original_pol += delta_pol
         remain = target_pol - original_pol
+        last_loop = i
         logger.debug(f"Polarization 2: loop {i}: remains {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}")
         if np.allclose(target_pol - original_pol, 0, atol=1e-3):
             break
     remain = target_pol - original_pol
-    logger.info(f"Polarization 2: loop {i}: remains {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}")
+    logger.info(f"Polarization 2: loop {last_loop}: remains {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}")
     for edge in user_fixed.edges():
         dg.add_edge(edge[0], edge[1])
     
