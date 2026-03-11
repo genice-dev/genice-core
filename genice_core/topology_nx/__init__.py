@@ -112,7 +112,7 @@ def force_polarize(
         logger.debug(f"Polarization 2: loop {i}: remains {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}")
         if np.allclose(target_pol - original_pol, 0, atol=1e-3):
             break
-    logger.info(f"Polarization: loop {i}: remains {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}")
+    logger.info(f"Polarization 2: loop {i}: remains {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}")
     for edge in user_fixed.edges():
         dg.add_edge(edge[0], edge[1])
     
