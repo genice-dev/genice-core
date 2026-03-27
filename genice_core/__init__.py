@@ -491,6 +491,7 @@ def ice_graph(
         [nx.DiGraph, nx.Graph], Tuple[Optional[nx.DiGraph], List[List[int]]]
     ] = connect_matching_paths,
     g_format: Optional[Literal["edges", "adjacency"]] = None,
+    seed: Optional[int] = None,
 ) -> Union[Optional[nx.DiGraph], Optional[List[Tuple[int, int]]]]:
     """Make a digraph that obeys the ice rules.
 
@@ -527,87 +528,98 @@ def ice_graph(
         if fixed_edges.size() == 0 and pairing_attempts != 100:
             logger.debug("fixed_edges is empty; pairing_attempts is ignored.")
 
-    # Convert input g to a NetworkX Graph G.
-    if isinstance(g, nx.Graph):
-        G = g.copy()
-    else:
-        n_orig_tmp, adj = _graph_to_adj(g, g_format)
-        G = nx.Graph()
-        G.add_nodes_from(range(n_orig_tmp))
-        for u in range(n_orig_tmp):
-            for v in adj[u]:
-                if u < v:
-                    G.add_edge(u, v)
-    n_orig = G.number_of_nodes()
-
-    # derived cycles in extending the fixed edges.
-    derived_cycles: List[List[int]] = []
-
-    if fixed_edges.size() > 0:
-        if logger.isEnabledFor(DEBUG):
-            for u, v in fixed_edges.edges():
-                logger.debug(f"FIXED EDGE {u} {v}")
-
-        processed_edges: Optional[nx.DiGraph] = None
-        for attempt in range(pairing_attempts):
-            # NetworkX-based engine: (fixed_edges, G) -> (processed_edges, derived_cycles)
-            processed_edges, derived_cycles = connect_engine(fixed_edges, G)
-            if processed_edges is not None:
-                break
-            logger.info(
-                f"Attempt {attempt + 1}/{pairing_attempts} failed to connect paths"
-            )
+    # Save the global random state to decouple ice_graph execution from the global sequence
+    global_random_state = np.random.get_state()
+    try:
+        if seed is not None:
+            np.random.seed(seed)
         else:
-            logger.error(f"Failed to find a solution after {pairing_attempts} attempts")
-            return None
-    else:
-        processed_edges = nx.DiGraph()
+            # Seed with OS entropy to be unpredictable while not advancing the global numpy generator linearly
+            np.random.seed(None)
+            
+        # Convert input g to a NetworkX Graph G.
+        if isinstance(g, nx.Graph):
+            G = g.copy()
+        else:
+            n_orig_tmp, adj = _graph_to_adj(g, g_format)
+            G = nx.Graph()
+            G.add_nodes_from(range(n_orig_tmp))
+            for u in range(n_orig_tmp):
+                for v in adj[u]:
+                    if u < v:
+                        G.add_edge(u, v)
+        n_orig = G.number_of_nodes()
 
-    # really fixed in connect_matching_paths_nx()
-    finally_fixed_edges = nx.DiGraph(processed_edges)
-    for cycle in derived_cycles:
-        for u, v in zip(cycle, cycle[1:]):
-            if finally_fixed_edges.has_edge(u, v):
-                finally_fixed_edges.remove_edge(u, v)
+        # derived cycles in extending the fixed edges.
+        derived_cycles: List[List[int]] = []
 
-    # Divide the remaining (unfixed) part of the graph into a noodle graph
-    divided_graph = noodlize(G, processed_edges)
+        if fixed_edges.size() > 0:
+            if logger.isEnabledFor(DEBUG):
+                for u, v in fixed_edges.edges():
+                    logger.debug(f"FIXED EDGE {u} {v}")
 
-    # Simplify paths ( paths with least crossings )
-    paths = split_into_simple_paths(n_orig, divided_graph) + derived_cycles
+            processed_edges: Optional[nx.DiGraph] = None
+            for attempt in range(pairing_attempts):
+                # NetworkX-based engine: (fixed_edges, G) -> (processed_edges, derived_cycles)
+                processed_edges, derived_cycles = connect_engine(fixed_edges, G)
+                if processed_edges is not None:
+                    break
+                logger.info(
+                    f"Attempt {attempt + 1}/{pairing_attempts} failed to connect paths"
+                )
+            else:
+                logger.error(f"Failed to find a solution after {pairing_attempts} attempts")
+                return None
+        else:
+            processed_edges = nx.DiGraph()
 
-    # arrange the orientations here if you want to balance the polarization
-    if vertex_positions is not None:
-        pos_arr = _vertex_positions_array(vertex_positions, n_orig)
-        dim = pos_arr.shape[1]
-        target_pol = np.resize(
-            np.asarray(target_pol, dtype=float).flatten(), dim
-        ).copy()
+        # really fixed in connect_matching_paths_nx()
+        finally_fixed_edges = nx.DiGraph(processed_edges)
+        for cycle in derived_cycles:
+            for u, v in zip(cycle, cycle[1:]):
+                if finally_fixed_edges.has_edge(u, v):
+                    finally_fixed_edges.remove_edge(u, v)
 
-        # Set the target_pol in order to cancel the polarization in the fixed part.
-        fixed_edge_list = list(finally_fixed_edges.edges())
-        target_pol -= vector_sum(fixed_edge_list, pos_arr, is_periodic_boundary)
+        # Divide the remaining (unfixed) part of the graph into a noodle graph
+        divided_graph = noodlize(G, processed_edges)
 
-        paths = optimize(
-            paths,
-            vertex_positions=pos_arr,
-            is_periodic_boundary=is_periodic_boundary,
-            dipole_optimization_cycles=dipole_optimization_cycles,
-            target_pol=target_pol,
-        )
+        # Simplify paths ( paths with least crossings )
+        paths = split_into_simple_paths(n_orig, divided_graph) + derived_cycles
 
-    # Combine everything together
-    dg = nx.DiGraph(finally_fixed_edges)
-    for path in paths:
-        nx.add_path(dg, path)
+        # arrange the orientations here if you want to balance the polarization
+        if vertex_positions is not None:
+            pos_arr = _vertex_positions_array(vertex_positions, n_orig)
+            dim = pos_arr.shape[1]
+            target_pol = np.resize(
+                np.asarray(target_pol, dtype=float).flatten(), dim
+            ).copy()
+
+            # Set the target_pol in order to cancel the polarization in the fixed part.
+            fixed_edge_list = list(finally_fixed_edges.edges())
+            target_pol -= vector_sum(fixed_edge_list, pos_arr, is_periodic_boundary)
+
+            paths = optimize(
+                paths,
+                vertex_positions=pos_arr,
+                is_periodic_boundary=is_periodic_boundary,
+                dipole_optimization_cycles=dipole_optimization_cycles,
+                target_pol=target_pol,
+            )
+
+        # Combine everything together
+        dg = nx.DiGraph(finally_fixed_edges)
+        for path in paths:
+            nx.add_path(dg, path)
 
 
-    dg = force_polarize(dg, fixed_edges, vertex_positions, target_pol, dipole_optimization_cycles2)
+        dg = force_polarize(dg, fixed_edges, vertex_positions, target_pol, dipole_optimization_cycles2)
 
 
-    all_edges = list(dg.edges())
-    _verify_ice_rules(n_orig, all_edges, fixed_edges)
+        all_edges = list(dg.edges())
+        _verify_ice_rules(n_orig, all_edges, fixed_edges)
 
-    if return_edges:
-        return all_edges
-    return dg
+        if return_edges:
+            return all_edges
+        return dg
+    finally:
+        np.random.set_state(global_random_state)
