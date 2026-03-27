@@ -8,7 +8,6 @@ from .noodle import (
 )
 from .connect_random import connect_matching_paths
 from ..dipole import vector_sum, _path_dipole_moment_pbc
-import random
 import numpy as np
 import networkx as nx
 from collections import defaultdict
@@ -26,6 +25,7 @@ def reverse_path_edges(dg: nx.DiGraph, path: list[int]) -> None:
         dg.remove_edge(u, v)
         dg.add_edge(v, u)
 
+
 def polarize(
     dg: nx.DiGraph,
     vertex_positions: np.ndarray,
@@ -34,11 +34,17 @@ def polarize(
     target_pol: np.ndarray,
 ):
     while True:
-        A = random.choice(list(dg.nodes()))
+        A = np.random.choice(list(dg.nodes()))
         if dg.in_degree(A) > 0 and dg.out_degree(A) > 0:
             break
 
-    address_A = np.array([int(vertex_positions[A][0] * grid_shape[0]), int(vertex_positions[A][1] * grid_shape[1]), int(vertex_positions[A][2] * grid_shape[2])])
+    address_A = np.array(
+        [
+            int(vertex_positions[A][0] * grid_shape[0]),
+            int(vertex_positions[A][1] * grid_shape[1]),
+            int(vertex_positions[A][2] * grid_shape[2]),
+        ]
+    )
     antipode_x = 0 if abs(target_pol[0]) < 0.01 else grid_shape[0] // 2
     antipode_y = 0 if abs(target_pol[1]) < 0.01 else grid_shape[1] // 2
     antipode_z = 0 if abs(target_pol[2]) < 0.01 else grid_shape[2] // 2
@@ -47,7 +53,7 @@ def polarize(
     residents_B = residents[tuple(address_B)]
 
     while True:
-        B = random.choice(list(residents_B))
+        B = np.random.choice(list(residents_B))
         if dg.in_degree(B) > 0 and dg.out_degree(B) > 0:
             break
 
@@ -66,14 +72,13 @@ def polarize(
     if np.allclose(delta_pol, 0, atol=1e-3):
         return np.zeros(3)
 
-    new_pol = target_pol + delta_pol*2
+    new_pol = target_pol + delta_pol * 2
     if new_pol @ new_pol <= target_pol @ target_pol:
         cycle = A_to_B + B_to_A[1:]
         reverse_path_edges(dg, cycle)
-        return -delta_pol*2
+        return -delta_pol * 2
 
     return np.zeros(3)
-    
 
 
 def force_polarize(
@@ -94,28 +99,40 @@ def force_polarize(
     for edge in hbn.edges():
         if user_fixed.has_edge(edge[0], edge[1]):
             dg.remove_edge(edge[0], edge[1])
-    
-    original_pol = vector_sum(list(hbn.edges()), vertex_positions, is_periodic_boundary=True)
+
+    original_pol = vector_sum(
+        list(hbn.edges()), vertex_positions, is_periodic_boundary=True
+    )
 
     N = len(vertex_positions)
-    Ng = int((N / 5)**(1/3))
-    
+    Ng = int((N / 5) ** (1 / 3))
+
     residents = defaultdict(set)
     for idx, pos in enumerate(vertex_positions):
         residents[int(pos[0] * Ng), int(pos[1] * Ng), int(pos[2] * Ng)].add(idx)
-    
+
     last_loop = -1
     for i in range(dipole_optimization_cycles2):
-        delta_pol = polarize(dg, vertex_positions, residents, grid_shape=(Ng, Ng, Ng), target_pol=target_pol - original_pol)
+        delta_pol = polarize(
+            dg,
+            vertex_positions,
+            residents,
+            grid_shape=(Ng, Ng, Ng),
+            target_pol=target_pol - original_pol,
+        )
         original_pol += delta_pol
         remain = target_pol - original_pol
         last_loop = i
-        logger.debug(f"Polarization 2: loop {i}: yet to be optimized {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}")
+        logger.debug(
+            f"Polarization 2: loop {i}: yet to be optimized {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}"
+        )
         if np.allclose(target_pol - original_pol, 0, atol=1e-3):
             break
     remain = target_pol - original_pol
-    logger.info(f"Polarization 2: loop {last_loop}: yet to be optimized {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}")
+    logger.info(
+        f"Polarization 2: loop {last_loop}: yet to be optimized {remain[0]:.2f}, {remain[1]:.2f}, {remain[2]:.2f}"
+    )
     for edge in user_fixed.edges():
         dg.add_edge(edge[0], edge[1])
-    
+
     return dg
