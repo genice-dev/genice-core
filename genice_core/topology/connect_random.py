@@ -5,6 +5,7 @@ from typing import List, Tuple, Optional
 
 import numpy as np
 
+from genice_core.compat import deprecated_connect_engine
 from genice_core.topology._shared import (
     node_to_idx,
     _copy_directed,
@@ -14,13 +15,14 @@ from genice_core.topology._shared import (
 )
 
 
+@deprecated_connect_engine
 def connect_matching_paths(
     n_orig: int,
     adj: List[List[int]],
     fixed_out: List[List[int]],
     fixed_in: List[List[int]],
 ) -> Tuple[Optional[Tuple[List[List[int]], List[List[int]]]], List[List[int]]]:
-    """Connect matching paths. Returns ((out_adj, in_adj), derived_cycles) or (None, [])."""
+    """Deprecated array backend. Use :func:`~genice_core.topology_nx.connect_mcf.connect_matching_paths_mcf` with NetworkX graphs."""
     logger = getLogger()
     _fixed_out, _fixed_in = _copy_directed(n_orig, fixed_out, fixed_in)
     in_peri, out_peri = _get_perimeters(n_orig, adj, _fixed_out, _fixed_in)

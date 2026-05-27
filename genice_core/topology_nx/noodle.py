@@ -7,6 +7,8 @@ from typing import List, Optional, Set, Tuple
 import networkx as nx
 import numpy as np
 
+from genice_core.compat import deprecated_connect_engine
+
 
 def _trace_path(g: nx.Graph, path: List[int]) -> List[int]:
     """Trace the path in a linear or cyclic graph."""
@@ -143,10 +145,11 @@ def _get_perimeters(
     return in_peri, out_peri
 
 
+@deprecated_connect_engine
 def connect_matching_paths(
     fixed: nx.DiGraph, g: nx.Graph
 ) -> Tuple[Optional[nx.DiGraph], List[List[int]]]:
-    """NetworkX version of connect_matching_paths (restored from nx tag)."""
+    """Deprecated duplicate; use :func:`~genice_core.topology_nx.connect_mcf.connect_matching_paths_mcf`."""
     logger = getLogger()
 
     _fixed = nx.DiGraph(fixed)

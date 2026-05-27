@@ -6,6 +6,7 @@ from typing import List, Tuple, Optional, Set
 
 import numpy as np
 
+from genice_core.compat import deprecated_connect_engine
 from genice_core.topology._shared import (
     node_to_idx,
     idx_to_node,
@@ -99,15 +100,14 @@ def _shortest_path_to_any_target_bfs(
     return path, found
 
 
+@deprecated_connect_engine
 def connect_matching_paths_SP2ST(
     n_orig: int,
     adj: List[List[int]],
     fixed_out: List[List[int]],
     fixed_in: List[List[int]],
 ) -> Tuple[Optional[Tuple[List[List[int]], List[List[int]]]], List[List[int]]]:
-    """Connect matching paths by shortest path to a set of targets (SP2ST).
-    Same interface as connect_matching_paths. Good for high doping.
-    Returns ((out_adj, in_adj), derived_cycles) or (None, [])."""
+    """Deprecated SP2ST connect. Use :func:`~genice_core.topology_nx.connect_mcf.connect_matching_paths_mcf` instead."""
     logger = getLogger()
     _fixed_out, _fixed_in = _copy_directed(n_orig, fixed_out, fixed_in)
     in_peri, out_peri, undet_peri = _get_perimeters_bfs1(

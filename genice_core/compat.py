@@ -4,10 +4,32 @@ Backward compatibility utilities (explicit parameter alias mapping).
 
 import functools
 import logging
+import warnings
 from typing import Callable, TypeVar
 
 logger = logging.getLogger(__name__)
 F = TypeVar("F", bound=Callable)
+
+DEPRECATED_CONNECT_ENGINE_MSG = (
+    "{name} is deprecated and will be removed in a future release. "
+    "Use connect_matching_paths_mcf (genice_core.topology_nx.connect_mcf) "
+    "as the connect_engine for ice_graph."
+)
+
+
+def deprecated_connect_engine(func: F) -> F:
+    """Emit DeprecationWarning when a legacy connect_engine implementation is called."""
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        warnings.warn(
+            DEPRECATED_CONNECT_ENGINE_MSG.format(name=func.__name__),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return func(*args, **kwargs)
+
+    return wrapper  # type: ignore[return-value]
 
 
 def accept_aliases(**alias_map: str) -> Callable[[F], F]:

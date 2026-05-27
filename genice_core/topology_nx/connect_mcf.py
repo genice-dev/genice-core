@@ -9,11 +9,11 @@ import networkx as nx
 def connect_matching_paths_mcf(
     fixed: nx.DiGraph, g: nx.Graph
 ) -> Tuple[nx.DiGraph | None, List[List[int]]]:
-    """MCF-based connect_engine for genice_core.ice_graph.
+    """MCF-based connect_engine for genice_core.ice_graph (supported API).
 
-    This is a best-effort replacement of genice_core's
-    connect_matching_paths_nx. It constructs a min-cost flow that routes
-    from out_peri to in_peri using edge-disjoint (undirected) free O-O bonds.
+    Constructs a min-cost flow that routes from out_peri to in_peri using
+    edge-disjoint (undirected) free O-O bonds. This is the default
+    ``connect_engine`` for :func:`genice_core.ice_graph`.
     """
     logger = getLogger(__name__)
 

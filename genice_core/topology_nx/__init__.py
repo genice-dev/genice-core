@@ -17,7 +17,7 @@ from logging import getLogger
 __all__ = [
     "noodlize",
     "split_into_simple_paths",
-    "connect_matching_paths",
+    "connect_matching_paths",  # deprecated
     "connect_matching_paths_mcf",
 ]
 

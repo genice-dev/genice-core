@@ -6,6 +6,8 @@ from typing import List, Optional, Set, Tuple
 import networkx as nx
 import numpy as np
 
+from genice_core.compat import deprecated_connect_engine
+
 
 def _remove_dummy_nodes(g: nx.DiGraph) -> None:
     """Remove dummy nodes -1..-4 from the graph (in place)."""
@@ -39,10 +41,11 @@ def _get_perimeters(
     return in_peri, out_peri
 
 
+@deprecated_connect_engine
 def connect_matching_paths(
     fixed: nx.DiGraph, g: nx.Graph
 ) -> Tuple[Optional[nx.DiGraph], List[List[int]]]:
-    """NetworkX version of connect_matching_paths (restored from nx tag)."""
+    """Deprecated random path extension. Use :func:`connect_matching_paths_mcf` instead."""
     logger = getLogger()
 
     _fixed = nx.DiGraph(fixed)

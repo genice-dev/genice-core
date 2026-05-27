@@ -8,21 +8,13 @@ dynamic = ["version"]
 
 [tool.poetry]
 name = "genice-core"
-version = "1.6.0" # major.minor.fix
+version = "1.6.1" # major.minor.fix
 authors = [
   "Masakazu Matsumoto <vitroid@gmail.com>", 
 ]
 description = "Core algorithms of GenIce2"
 [tool.poetry.dependencies]
-python = ">=3.10,<4.0"
-# readme = "README.md"
-# requires-python = ">=3.9"
-# classifiers = [
-#     "Programming Language :: Python :: 3",
-#     "License :: OSI Approved :: MIT License",
-#     "Operating System :: OS Independent",
-# ]
-# dependencies = ["numpy", "networkx"]
+python = ">=3.11,<4.0"
 networkx = "^3.2.1"
 numpy = ">=1.26.2"
 
@@ -37,6 +29,7 @@ plotly = "^6.1.2"
 clustice = "^0.8.0"
 genice2 = {version = "^2.2.12.4", python = ">=3.10"}
 matplotlib = "^3.10.8"
+genice3 = {path = "../GenIce3"}
 
 
 [tool.poetry.group.test.dependencies]

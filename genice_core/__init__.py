@@ -16,7 +16,7 @@ from genice_core.topology_nx import (
     connect_matching_paths_mcf,
 )
 from genice_core.dipole import optimize, vector_sum
-from genice_core.compat import accept_aliases
+from genice_core.compat import accept_aliases, deprecated_connect_engine
 from typing import Callable, Union, List, Optional, Tuple, Sequence, Literal, Set
 # from collections import defaultdict
 from logging import getLogger, DEBUG
@@ -291,10 +291,11 @@ def _get_perimeters_nx(
     return in_peri, out_peri
 
 
+@deprecated_connect_engine
 def connect_matching_paths_nx(
     fixed: nx.DiGraph, g: nx.Graph
 ) -> Tuple[Optional[nx.DiGraph], List[List[int]]]:
-    """NetworkX version of connect_matching_paths (restored from nx tag)."""
+    """Deprecated duplicate of random connect. Use :func:`~genice_core.topology_nx.connect_mcf.connect_matching_paths_mcf` instead."""
     logger = getLogger()
 
     # Make a copy to keep the original graph untouched

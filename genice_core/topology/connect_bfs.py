@@ -5,6 +5,7 @@ from typing import List, Tuple, Optional, Set
 
 import numpy as np
 
+from genice_core.compat import deprecated_connect_engine
 from genice_core.topology._shared import (
     node_to_idx,
     idx_to_node,
@@ -15,16 +16,14 @@ from genice_core.topology._shared import (
 )
 
 
+@deprecated_connect_engine
 def connect_matching_paths_bfs(
     n_orig: int,
     adj: List[List[int]],
     fixed_out: List[List[int]],
     fixed_in: List[List[int]],
 ) -> Tuple[Optional[Tuple[List[List[int]], List[List[int]]]], List[List[int]]]:
-    """Connect matching paths by advancing from all sources/sinks in BFS rounds.
-    Reduces dead ends by not letting a single path monopolize edges.
-    Returns ((out_adj, in_adj), derived_cycles) or (None, []). derived_cycles may be [].
-    """
+    """Deprecated BFS connect. Use :func:`~genice_core.topology_nx.connect_mcf.connect_matching_paths_mcf` instead."""
     logger = getLogger()
     _fixed_out, _fixed_in = _copy_directed(n_orig, fixed_out, fixed_in)
     in_peri: Set[int] = set()

@@ -12,13 +12,14 @@ from genice_core.topology.connect_sp2st import (
     connect_matching_paths_SP2ST,
 )
 # Backward compatibility alias
+# Deprecated alias of connect_matching_paths_SP2ST.
 connect_matching_paths_BFS1 = connect_matching_paths_SP2ST
 
 __all__ = [
     "noodlize",
     "split_into_simple_paths",
-    "connect_matching_paths",
-    "connect_matching_paths_bfs",
-    "connect_matching_paths_SP2ST",
-    "connect_matching_paths_BFS1",
+    "connect_matching_paths",  # deprecated
+    "connect_matching_paths_bfs",  # deprecated
+    "connect_matching_paths_SP2ST",  # deprecated
+    "connect_matching_paths_BFS1",  # deprecated
 ]
