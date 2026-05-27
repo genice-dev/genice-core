@@ -11,8 +11,9 @@ from genice_core.topology.graph_arrays import (
 from genice_core.topology_nx import (
     noodlize,
     split_into_simple_paths,
-    connect_matching_paths,
+    # connect_matching_paths,
     force_polarize,
+    connect_matching_paths_mcf,
 )
 from genice_core.dipole import optimize, vector_sum
 from genice_core.compat import accept_aliases
@@ -489,7 +490,7 @@ def ice_graph(
     dipole_optimization_cycles2: int = 0,
     connect_engine: Callable[
         [nx.DiGraph, nx.Graph], Tuple[Optional[nx.DiGraph], List[List[int]]]
-    ] = connect_matching_paths,
+    ] = connect_matching_paths_mcf,
     g_format: Optional[Literal["edges", "adjacency"]] = None,
     seed: Optional[int] = None,
 ) -> Union[Optional[nx.DiGraph], Optional[List[Tuple[int, int]]]]:

@@ -7,6 +7,7 @@ from .noodle import (
     split_into_simple_paths,
 )
 from .connect_random import connect_matching_paths
+from .connect_mcf import connect_matching_paths_mcf
 from ..dipole import vector_sum, _path_dipole_moment_pbc
 import numpy as np
 import networkx as nx
@@ -17,6 +18,7 @@ __all__ = [
     "noodlize",
     "split_into_simple_paths",
     "connect_matching_paths",
+    "connect_matching_paths_mcf",
 ]
 
 
